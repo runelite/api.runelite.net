@@ -24,85 +24,19 @@
  */
 package net.runelite.http.service.item;
 
-import net.runelite.http.api.item.Item;
-import net.runelite.http.api.item.ItemType;
+import java.util.List;
 
-public class RSItem
+public class RSSearch
 {
-	private int id;
-	private String name;
-	private String description;
-	private String type;
-	private String icon;
-	private String icon_large;
+	private List<RSItem> items;
 
-	public int getId()
+	public List<RSItem> getItems()
 	{
-		return id;
+		return items;
 	}
 
-	public void setId(int id)
+	public void setItems(List<RSItem> items)
 	{
-		this.id = id;
-	}
-
-	public String getName()
-	{
-		return name;
-	}
-
-	public void setName(String name)
-	{
-		this.name = name;
-	}
-
-	public String getDescription()
-	{
-		return description;
-	}
-
-	public void setDescription(String description)
-	{
-		this.description = description;
-	}
-
-	public String getType()
-	{
-		return type;
-	}
-
-	public void setType(String type)
-	{
-		this.type = type;
-	}
-
-	public String getIcon()
-	{
-		return icon;
-	}
-
-	public void setIcon(String icon)
-	{
-		this.icon = icon;
-	}
-
-	public String getIcon_large()
-	{
-		return icon_large;
-	}
-
-	public void setIcon_large(String icon_large)
-	{
-		this.icon_large = icon_large;
-	}
-
-	public Item toItem()
-	{
-		Item item = new Item();
-		item.setId(id);
-		item.setName(name);
-		item.setType(ItemType.of(type));
-		item.setDescription(description);
-		return item;
+		this.items = items;
 	}
 }
