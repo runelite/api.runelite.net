@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2018, UniquePassive <https://github.com/uniquepassive>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,59 +24,35 @@
  */
 package net.runelite.http.service.worlds;
 
-import java.io.IOException;
-import java.io.InputStream;
-import net.runelite.http.api.worlds.World;
-import net.runelite.http.api.worlds.WorldResult;
 import net.runelite.http.api.worlds.WorldType;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okio.Buffer;
-import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.sql2o.tools.IOUtils;
 
-public class WorldsServiceTest
+enum ServiceWorldType
 {
+	MEMBERS(WorldType.MEMBERS, 1),
+	PVP(WorldType.PVP, 1 << 2),
+	BOUNTY(WorldType.BOUNTY, 1 << 5),
+	SKILL_TOTAL(WorldType.SKILL_TOTAL, 1 << 7),
+	PVP_HIGH_RISK(WorldType.PVP_HIGH_RISK, 1 << 10),
+	LAST_MAN_STANDING(WorldType.LAST_MAN_STANDING, 1 << 14),
+	DEADMAN(WorldType.DEADMAN, 1 << 29),
+	SEASONAL_DEADMAN(WorldType.SEASONAL_DEADMAN, 1 << 30);
 
-	private final MockWebServer server = new MockWebServer();
+	private final WorldType apiType;
+	private final int mask;
 
-	@Before
-	public void before() throws IOException
+	private ServiceWorldType(WorldType apiType, int mask)
 	{
-		InputStream in = WorldsServiceTest.class.getResourceAsStream("worldlist");
-		byte[] worldData = IOUtils.toByteArray(in);
-
-		Buffer buffer = new Buffer();
-		buffer.write(worldData);
-
-		server.enqueue(new MockResponse().setBody(buffer));
-
-		server.start();
+		this.apiType = apiType;
+		this.mask = mask;
 	}
 
-	@After
-	public void after() throws IOException
+	public WorldType getApiType()
 	{
-		server.shutdown();
+		return apiType;
 	}
 
-	@Test
-	public void testListWorlds() throws Exception
+	public int getMask()
 	{
-		WorldsService worlds = new WorldsService();
-		worlds.setUrl(server.url("/"));
-
-		WorldResult worldResult = worlds.listWorlds();
-		assertEquals(82, worldResult.getWorlds().size());
-
-		World world = worldResult.findWorld(385);
-		assertNotNull(world);
-		assertTrue(world.getTypes().contains(WorldType.SKILL_TOTAL));
+		return mask;
 	}
-
 }
