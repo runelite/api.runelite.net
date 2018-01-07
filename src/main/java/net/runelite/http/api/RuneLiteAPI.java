@@ -33,9 +33,9 @@ import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RuneliteAPI
+public class RuneLiteAPI
 {
-	private static final Logger logger = LoggerFactory.getLogger(RuneliteAPI.class);
+	private static final Logger logger = LoggerFactory.getLogger(RuneLiteAPI.class);
 
 	public static final String RUNELITE_AUTH = "RUNELITE-AUTH";
 
@@ -52,7 +52,7 @@ public class RuneliteAPI
 	{
 		try
 		{
-			InputStream in = RuneliteAPI.class.getResourceAsStream("/runelite.properties");
+			InputStream in = RuneLiteAPI.class.getResourceAsStream("/runelite.properties");
 			properties.load(in);
 
 			version = properties.getProperty("runelite.version");
@@ -81,7 +81,7 @@ public class RuneliteAPI
 
 	public static void setVersion(String version)
 	{
-		RuneliteAPI.version = version;
+		RuneLiteAPI.version = version;
 	}
 
 	public static int getRsVersion()

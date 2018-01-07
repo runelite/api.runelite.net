@@ -28,7 +28,7 @@ import com.google.gson.JsonParseException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import net.runelite.http.api.RuneliteAPI;
+import net.runelite.http.api.RuneLiteAPI;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -42,7 +42,7 @@ public class UpdateCheckClient
 
 	public boolean isOutdated()
 	{
-		HttpUrl url = RuneliteAPI.getApiBase().newBuilder()
+		HttpUrl url = RuneLiteAPI.getApiBase().newBuilder()
 			.addPathSegment("update-check")
 			.build();
 
@@ -52,12 +52,12 @@ public class UpdateCheckClient
 			.url(url)
 			.build();
 
-		try (Response response = RuneliteAPI.CLIENT.newCall(request).execute())
+		try (Response response = RuneLiteAPI.CLIENT.newCall(request).execute())
 		{
 			ResponseBody body = response.body();
 
 			InputStream in = body.byteStream();
-			return RuneliteAPI.GSON.fromJson(new InputStreamReader(in), boolean.class);
+			return RuneLiteAPI.GSON.fromJson(new InputStreamReader(in), boolean.class);
 		}
 		catch (JsonParseException | IOException ex)
 		{
