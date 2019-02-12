@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, AeonLucid <https://github.com/AeonLucid>
+ * Copyright (c) 2019, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,48 +22,57 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.http.api.osbuddy;
+package net.runelite.http.api.ge;
 
-import com.google.gson.JsonParseException;
+import com.google.gson.Gson;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.UUID;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.http.api.RuneLiteAPI;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 @Slf4j
+@AllArgsConstructor
 public class GrandExchangeClient
 {
-	public GrandExchangeResult lookupItem(int itemId) throws IOException
+	private static final MediaType JSON = MediaType.parse("application/json");
+	private static final Gson GSON = RuneLiteAPI.GSON;
+
+	private final UUID uuid;
+
+	public void submit(GrandExchangeTrade grandExchangeTrade)
 	{
 		final HttpUrl url = RuneLiteAPI.getApiBase().newBuilder()
-			.addPathSegment("osb")
 			.addPathSegment("ge")
-			.addQueryParameter("itemId", Integer.toString(itemId))
 			.build();
 
-		log.debug("Built URI: {}", url);
-
-		final Request request = new Request.Builder()
+		Request request = new Request.Builder()
+			.header(RuneLiteAPI.RUNELITE_AUTH, uuid.toString())
+			.post(RequestBody.create(JSON, GSON.toJson(grandExchangeTrade)))
 			.url(url)
 			.build();
 
-		try (final Response response = RuneLiteAPI.CLIENT.newCall(request).execute())
+		RuneLiteAPI.CLIENT.newCall(request).enqueue(new Callback()
 		{
-			if (!response.isSuccessful())
+			@Override
+			public void onFailure(Call call, IOException e)
 			{
-				throw new IOException("Error looking up item id: " + response.message());
+				log.debug("unable to submit trade", e);
 			}
 
-			final InputStream in = response.body().byteStream();
-			return RuneLiteAPI.GSON.fromJson(new InputStreamReader(in), GrandExchangeResult.class);
-		}
-		catch (JsonParseException ex)
-		{
-			throw new IOException(ex);
-		}
+			@Override
+			public void onResponse(Call call, Response response)
+			{
+				log.debug("Submitted trade");
+				response.close();
+			}
+		});
 	}
 }

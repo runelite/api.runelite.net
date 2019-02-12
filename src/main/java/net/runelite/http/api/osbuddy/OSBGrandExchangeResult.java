@@ -28,7 +28,7 @@ import java.time.Instant;
 import lombok.Data;
 
 @Data
-public class GrandExchangeResult
+public class OSBGrandExchangeResult
 {
 	private int item_id;
 	private int buy_average;
