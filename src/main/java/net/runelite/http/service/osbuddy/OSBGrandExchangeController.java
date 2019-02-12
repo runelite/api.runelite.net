@@ -35,12 +35,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/osb/ge")
-public class GrandExchangeController
+public class OSBGrandExchangeController
 {
-	private final GrandExchangeService grandExchangeService;
+	private final OSBGrandExchangeService grandExchangeService;
 
 	@Autowired
-	public GrandExchangeController(GrandExchangeService grandExchangeService)
+	public OSBGrandExchangeController(OSBGrandExchangeService grandExchangeService)
 	{
 		this.grandExchangeService = grandExchangeService;
 	}
