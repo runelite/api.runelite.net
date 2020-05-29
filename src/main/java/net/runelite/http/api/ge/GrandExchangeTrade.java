@@ -24,7 +24,6 @@
  */
 package net.runelite.http.api.ge;
 
-import java.time.Instant;
 import lombok.Data;
 
 @Data
@@ -34,5 +33,4 @@ public class GrandExchangeTrade
 	private int itemId;
 	private int quantity;
 	private int price;
-	private Instant time;
 }
