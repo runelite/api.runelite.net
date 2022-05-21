@@ -27,27 +27,16 @@ package net.runelite.http.service;
 import java.util.List;
 import net.runelite.http.api.RuneLiteAPI;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebMvc
-public class SpringWebMvcConfigurer extends WebMvcConfigurerAdapter
+public class SpringWebMvcConfigurer implements WebMvcConfigurer
 {
-	/**
-	 * Configure .js as application/json to trick Cloudflare into caching json responses
-	 */
-	@Override
-	public void configureContentNegotiation(ContentNegotiationConfigurer configurer)
-	{
-		configurer.mediaType("js", MediaType.APPLICATION_JSON);
-	}
-
 	/**
 	 * Use GSON instead of Jackson for JSON serialization
 	 * @param converters

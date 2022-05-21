@@ -42,12 +42,10 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/feed")
 @Slf4j
 public class FeedController
 {
@@ -119,7 +117,7 @@ public class FeedController
 		memoizedFeed = new MemoizedFeed(new FeedResult(items));
 	}
 
-	@GetMapping
+	@RequestMapping(value = { "/feed", "/feed.js" })
 	public ResponseEntity<FeedResult> getFeed()
 	{
 		if (memoizedFeed == null)
