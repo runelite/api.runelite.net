@@ -38,6 +38,7 @@ import net.runelite.http.service.account.AuthFilter;
 import net.runelite.http.service.account.beans.SessionEntry;
 import net.runelite.http.service.util.redis.RedisPool;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,25 +63,32 @@ public class LootTrackerController
 	@Autowired
 	private AuthFilter auth;
 
+	@Value("${loottracker.store}")
+	private boolean store;
+
 	@RequestMapping(method = RequestMethod.POST)
 	public void storeLootRecord(HttpServletRequest request, HttpServletResponse response, @RequestBody Collection<LootRecord> records) throws IOException
 	{
-		SessionEntry session = null;
-		if (request.getHeader(RuneLiteAPI.RUNELITE_AUTH) != null)
+		if (store)
 		{
-			session = auth.handle(request, response);
-			if (session == null)
+			SessionEntry session = null;
+			if (request.getHeader(RuneLiteAPI.RUNELITE_AUTH) != null)
 			{
-				// error is set here on the response, so we shouldn't continue
-				return;
+				session = auth.handle(request, response);
+				if (session == null)
+				{
+					// error is set here on the response, so we shouldn't continue
+					return;
+				}
+			}
+			Integer userId = session == null ? null : session.getUser();
+
+			if (userId != null)
+			{
+				service.store(records, userId);
 			}
 		}
-		Integer userId = session == null ? null : session.getUser();
 
-		if (userId != null)
-		{
-			service.store(records, userId);
-		}
 		response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
 
 		try (Jedis jedis = redisPool.getResource())
