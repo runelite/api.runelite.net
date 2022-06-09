@@ -42,11 +42,10 @@ import javax.servlet.http.HttpServletResponse;
 import net.runelite.http.api.RuneLiteAPI;
 import net.runelite.http.api.account.OAuthResponse;
 import net.runelite.http.api.ws.WebsocketGsonFactory;
-import net.runelite.http.api.ws.WebsocketMessage;
-import net.runelite.http.api.ws.messages.LoginResponse;
 import net.runelite.http.service.account.beans.SessionEntry;
 import net.runelite.http.service.account.beans.UserEntry;
 import net.runelite.http.service.util.redis.RedisPool;
+import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +58,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
 import org.sql2o.Sql2oException;
-import redis.clients.jedis.Jedis;
 
 @RestController
 @RequestMapping("/account")
@@ -89,18 +87,14 @@ public class AccountService
 
 	private static final String SCOPE = "https://www.googleapis.com/auth/userinfo.email";
 	private static final String USERINFO = "https://www.googleapis.com/oauth2/v2/userinfo";
-	private static final String RL_REDIR = "https://runelite.net/logged-in";
 
 	private final Gson gson = RuneLiteAPI.GSON;
-	private final Gson websocketGson = WebsocketGsonFactory.build();
 
 	private final Sql2o sql2o;
 	private final String oauthClientId;
 	private final String oauthClientSecret;
 	private final String oauthCallback;
-	private final String runeliteVersion;
 	private final AuthFilter auth;
-	private final RedisPool jedisPool;
 
 	@Autowired
 	public AccountService(
@@ -108,18 +102,14 @@ public class AccountService
 		@Value("${oauth.client-id}") String oauthClientId,
 		@Value("${oauth.client-secret}") String oauthClientSecret,
 		@Value("${oauth.callback}") String oauthCallback,
-		@Value("${runelite.version}") String runeliteVersion,
-		AuthFilter auth,
-		RedisPool jedisPool
+		AuthFilter auth
 	)
 	{
 		this.sql2o = sql2o;
 		this.oauthClientId = oauthClientId;
 		this.oauthClientSecret = oauthClientSecret;
 		this.oauthCallback = oauthCallback;
-		this.runeliteVersion = runeliteVersion;
 		this.auth = auth;
-		this.jedisPool = jedisPool;
 
 		try (Connection con = sql2o.open())
 		{
@@ -142,11 +132,10 @@ public class AccountService
 	}
 
 	@GetMapping("/login")
-	public OAuthResponse login(@RequestParam UUID uuid)
+	public OAuthResponse login(@RequestParam int port)
 	{
 		State state = new State();
-		state.setUuid(uuid);
-		state.setApiVersion(runeliteVersion);
+		state.setPort(port);
 
 		OAuth20Service service = new ServiceBuilder()
 			.apiKey(oauthClientId)
@@ -163,8 +152,6 @@ public class AccountService
 
 		OAuthResponse lr = new OAuthResponse();
 		lr.setOauthUrl(authorizationUrl);
-		lr.setUid(uuid);
-
 		return lr;
 	}
 
@@ -185,7 +172,7 @@ public class AccountService
 
 		State state = gson.fromJson(stateStr, State.class);
 
-		logger.info("Got authorization code {} for uuid {}", code, state.getUuid());
+		logger.debug("Got authorization code {}", code);
 
 		OAuth20Service service = new ServiceBuilder()
 			.apiKey(oauthClientId)
@@ -213,6 +200,9 @@ public class AccountService
 
 		logger.info("Got user info: {}", userInfo);
 
+		// secret session id
+		final UUID uuid = UUID.randomUUID();
+
 		try (Connection con = sql2o.open())
 		{
 			con.createQuery("insert ignore into users (username) values (:username)")
@@ -232,28 +222,24 @@ public class AccountService
 			// insert session
 			con.createQuery("insert ignore into sessions (user, uuid) values (:user, :uuid)")
 				.addParameter("user", user.getId())
-				.addParameter("uuid", state.getUuid().toString())
+				.addParameter("uuid", uuid.toString())
 				.executeUpdate();
 
 			logger.info("Created session for user {}", userInfo.getEmail());
 		}
 
-		response.sendRedirect(RL_REDIR);
-
-		notifySession(state.getUuid(), userInfo.getEmail());
+		// redirect to client
+		HttpUrl url = new HttpUrl.Builder()
+			.scheme("http")
+			.host("localhost")
+			.port(state.getPort())
+			.addPathSegment("oauth")
+			.addQueryParameter("username", userInfo.getEmail())
+			.addQueryParameter("sessionId", uuid.toString())
+			.build();
+		response.sendRedirect(url.toString());
 
 		return "";
-	}
-
-	private void notifySession(UUID uuid, String username)
-	{
-		LoginResponse response = new LoginResponse();
-		response.setUsername(username);
-
-		try (Jedis jedis = jedisPool.getResource())
-		{
-			jedis.publish("session." + uuid, websocketGson.toJson(response, WebsocketMessage.class));
-		}
 	}
 
 	@GetMapping("/logout")

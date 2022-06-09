@@ -24,12 +24,10 @@
  */
 package net.runelite.http.api.account;
 
-import java.util.UUID;
 import lombok.Data;
 
 @Data
 public class OAuthResponse
 {
 	private String oauthUrl;
-	private UUID uid;
 }

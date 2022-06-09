@@ -24,12 +24,10 @@
  */
 package net.runelite.http.service.account;
 
-import java.util.UUID;
 import lombok.Data;
 
 @Data
 public class State
 {
-	private UUID uuid;
-	private String apiVersion;
+	private int port;
 }
