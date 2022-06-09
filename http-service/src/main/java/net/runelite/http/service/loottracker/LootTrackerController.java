@@ -63,7 +63,7 @@ public class LootTrackerController
 	@Autowired
 	private AuthFilter auth;
 
-	@Value("${loottracker.store}")
+	@Value("${runelite.loottracker.store}")
 	private boolean store;
 
 	@RequestMapping(method = RequestMethod.POST)
