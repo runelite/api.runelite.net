@@ -100,14 +100,17 @@ public class AccountService
 		@Value("${oauth.client-id}") String oauthClientId,
 		@Value("${oauth.client-secret}") String oauthClientSecret,
 		@Value("${oauth.callback}") String oauthCallback,
+		@Value("${oauth.callback-snapshot}") String oauthSnapshotCallback,
+		@Value("#{servletContext.contextPath}") String contextPath,
 		AuthFilter auth
 	)
 	{
 		this.sql2o = sql2o;
 		this.oauthClientId = oauthClientId;
 		this.oauthClientSecret = oauthClientSecret;
-		this.oauthCallback = oauthCallback;
 		this.auth = auth;
+
+		this.oauthCallback = contextPath.toLowerCase().contains("snapshot") ? oauthSnapshotCallback : oauthCallback;
 
 		try (Connection con = sql2o.open())
 		{

@@ -15,6 +15,7 @@ oauth:
   client-id:
   client-secret:
   callback: https://api.runelite.net/oauth/
+  callback-snapshot: https://api.runelite.net/oauth-snapshot/
 
 # Minio client storage for cache
 minio:
