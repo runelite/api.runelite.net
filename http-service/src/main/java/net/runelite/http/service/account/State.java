@@ -30,5 +30,5 @@ import lombok.Data;
 public class State
 {
 	private String redirectUrl;
-	private int port;
+	private Integer port;
 }

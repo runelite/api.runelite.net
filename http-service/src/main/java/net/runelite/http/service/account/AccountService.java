@@ -134,7 +134,7 @@ public class AccountService
 	}
 
 	@GetMapping("/login")
-	public OAuthResponse login(@RequestParam(required = false) int port, @RequestParam(required = false) String redirectUrl)
+	public OAuthResponse login(@RequestParam(required = false) Integer port, @RequestParam(required = false) String redirectUrl)
 	{
 		State state = new State();
 		state.setPort(port);
