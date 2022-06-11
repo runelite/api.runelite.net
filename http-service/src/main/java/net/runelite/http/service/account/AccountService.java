@@ -134,10 +134,11 @@ public class AccountService
 	}
 
 	@GetMapping("/login")
-	public OAuthResponse login(@RequestParam int port)
+	public OAuthResponse login(@RequestParam(required = false) int port, @RequestParam(required = false) String redirectUrl)
 	{
 		State state = new State();
 		state.setPort(port);
+		state.setRedirectUrl(redirectUrl);
 
 		OAuth20Service service = new ServiceBuilder()
 			.apiKey(oauthClientId)
