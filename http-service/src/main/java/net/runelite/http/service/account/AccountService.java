@@ -31,6 +31,7 @@ import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.HashMap;
@@ -229,16 +230,29 @@ public class AccountService
 			logger.info("Created session for user {}", userInfo.getEmail());
 		}
 
-		// redirect to client
-		HttpUrl url = new HttpUrl.Builder()
-			.scheme("http")
-			.host("localhost")
-			.port(state.getPort())
-			.addPathSegment("oauth")
-			.addQueryParameter("username", userInfo.getEmail())
-			.addQueryParameter("sessionId", uuid.toString())
-			.build();
-		response.sendRedirect(url.toString());
+		HttpUrl redir;
+		if (!Strings.isNullOrEmpty(state.getRedirectUrl()))
+		{
+			// redirect to website
+			redir = HttpUrl.get(state.getRedirectUrl())
+				.newBuilder()
+				.addQueryParameter("username", userInfo.getEmail())
+				.addQueryParameter("sessionId", uuid.toString())
+				.build();
+		}
+		else
+		{
+			// redirect to client
+			redir = new HttpUrl.Builder()
+				.scheme("http")
+				.host("localhost")
+				.port(state.getPort())
+				.addPathSegment("oauth")
+				.addQueryParameter("username", userInfo.getEmail())
+				.addQueryParameter("sessionId", uuid.toString())
+				.build();
+		}
+		response.sendRedirect(redir.toString());
 
 		return "";
 	}
