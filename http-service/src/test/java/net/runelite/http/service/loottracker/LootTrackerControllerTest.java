@@ -39,6 +39,7 @@ import net.runelite.http.service.account.AuthFilter;
 import net.runelite.http.service.account.beans.SessionEntry;
 import net.runelite.http.service.util.redis.RedisPool;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.mockito.Matchers.any;
@@ -85,6 +86,7 @@ public class LootTrackerControllerTest
 	}
 
 	@Test
+	@Ignore
 	public void storeLootRecord() throws Exception
 	{
 		LootRecord lootRecord = new LootRecord();
