@@ -24,13 +24,18 @@
  */
 package net.runelite.http.service.worlds;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.runelite.http.api.worlds.WorldType;
 
+@RequiredArgsConstructor
+@Getter
 enum ServiceWorldType
 {
 	MEMBERS(WorldType.MEMBERS, 1),
 	PVP(WorldType.PVP, 1 << 2),
 	BOUNTY(WorldType.BOUNTY, 1 << 5),
+	PVP_ARENA(WorldType.PVP_ARENA, 1 << 6),
 	SKILL_TOTAL(WorldType.SKILL_TOTAL, 1 << 7),
 	HIGH_RISK(WorldType.HIGH_RISK, 1 << 10),
 	LAST_MAN_STANDING(WorldType.LAST_MAN_STANDING, 1 << 14),
@@ -41,20 +46,4 @@ enum ServiceWorldType
 
 	private final WorldType apiType;
 	private final int mask;
-
-	ServiceWorldType(WorldType apiType, int mask)
-	{
-		this.apiType = apiType;
-		this.mask = mask;
-	}
-
-	public WorldType getApiType()
-	{
-		return apiType;
-	}
-
-	public int getMask()
-	{
-		return mask;
-	}
 }

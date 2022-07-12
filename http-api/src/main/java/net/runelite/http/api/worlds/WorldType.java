@@ -35,5 +35,6 @@ public enum WorldType
 	NOSAVE_MODE,
 	DEADMAN,
 	TOURNAMENT,
-	SEASONAL;
+	SEASONAL,
+	PVP_ARENA;
 }
