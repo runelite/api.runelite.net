@@ -64,6 +64,9 @@ public class AccountService
 {
 	private static final Logger logger = LoggerFactory.getLogger(AccountService.class);
 
+	// CHANGING THIS AFTER THE MIGRATION HAS BEEN RUN WILL BREAK USER DATA
+	private static final String EMAIL_HASH_SALT = "runelite";
+
 	private static final String CREATE_SESSIONS = "CREATE TABLE IF NOT EXISTS `sessions` (\n"
 		+ "  `user` int(11) NOT NULL PRIMARY KEY,\n"
 		+ "  `uuid` varchar(36) NOT NULL,\n"
@@ -75,10 +78,10 @@ public class AccountService
 
 	private static final String CREATE_USERS = "CREATE TABLE IF NOT EXISTS `users` (\n"
 		+ "  `id` int(11) NOT NULL AUTO_INCREMENT,\n"
-		+ "  `username` tinytext NOT NULL,\n"
+		+ "  `email_hash` CHAR(64) NOT NULL,\n"
 		+ "  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n"
 		+ "  PRIMARY KEY (`id`),\n"
-		+ "  UNIQUE KEY `username` (`username`(64))\n"
+		+ "  UNIQUE KEY `email_hash_unique` (`email_hash`)\n"
 		+ ") ENGINE=InnoDB";
 
 	private static final String SESSIONS_FK = "ALTER TABLE `sessions`\n"
@@ -208,12 +211,12 @@ public class AccountService
 
 		try (Connection con = sql2o.open())
 		{
-			con.createQuery("insert ignore into users (username) values (:username)")
-				.addParameter("username", userInfo.getEmail())
+			con.createQuery("insert ignore into users (`email_hash`) values (SHA2(CONCAT('" + EMAIL_HASH_SALT + "', LOWER(:email)), 256))")
+				.addParameter("email", userInfo.getEmail())
 				.executeUpdate();
 
-			UserEntry user = con.createQuery("select id from users where username = :username")
-				.addParameter("username", userInfo.getEmail())
+			UserEntry user = con.createQuery("select id from users where `email_hash` = (SHA2(CONCAT('" + EMAIL_HASH_SALT + "', LOWER(:email)), 256))")
+				.addParameter("email", userInfo.getEmail())
 				.executeAndFetchFirst(UserEntry.class);
 
 			if (user == null)
