@@ -44,8 +44,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import net.runelite.http.api.RuneLiteAPI;
-import net.runelite.http.api.config.ConfigEntry;
-import net.runelite.http.api.config.Configuration;
+import net.runelite.http.api.config.ConfigPatch;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,16 +126,28 @@ public class ConfigService
 		return userConfig;
 	}
 
-	public List<String> patch(int userID, Configuration config)
+	public List<String> patch(int userID, ConfigPatch patch)
 	{
 		List<String> failures = new ArrayList<>();
-		List<Bson> sets = new ArrayList<>(config.getConfig().size());
-		for (ConfigEntry entry : config.getConfig())
+		List<Bson> sets = new ArrayList<>(patch.getEdit().size() + patch.getUnset().size());
+		for (Map.Entry<String, String> entry : patch.getEdit().entrySet())
 		{
 			Bson s = setForKV(entry.getKey(), entry.getValue());
 			if (s == null)
 			{
 				failures.add(entry.getKey());
+			}
+			else
+			{
+				sets.add(s);
+			}
+		}
+		for (String key : patch.getUnset())
+		{
+			Bson s = setForKV(key, null);
+			if (s == null)
+			{
+				failures.add(key);
 			}
 			else
 			{

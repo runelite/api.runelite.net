@@ -31,6 +31,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.runelite.http.api.config.ConfigEntry;
+import net.runelite.http.api.config.ConfigPatch;
 import net.runelite.http.api.config.Configuration;
 import net.runelite.http.service.account.AuthFilter;
 import net.runelite.http.service.account.beans.SessionEntry;
@@ -108,7 +109,43 @@ public class ConfigController
 			return null;
 		}
 
-		List<String> failures = configService.patch(session.getUser(), changes);
+		ConfigPatch patch = new ConfigPatch();
+		for (ConfigEntry entry : changes.getConfig())
+		{
+			if (entry.getValue() == null)
+			{
+				patch.getUnset().add(entry.getKey());
+			}
+			else
+			{
+				patch.getEdit().put(entry.getKey(), entry.getValue());
+			}
+		}
+
+		List<String> failures = configService.patch(session.getUser(), patch);
+		if (failures.size() != 0)
+		{
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return failures;
+		}
+
+		return null;
+	}
+
+	@PatchMapping("/v2")
+	public List<String> patch(
+		HttpServletRequest request,
+		HttpServletResponse response,
+		@RequestBody ConfigPatch patch
+	) throws IOException
+	{
+		SessionEntry session = authFilter.handle(request, response);
+		if (session == null)
+		{
+			return null;
+		}
+
+		List<String> failures = configService.patch(session.getUser(), patch);
 		if (failures.size() != 0)
 		{
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
