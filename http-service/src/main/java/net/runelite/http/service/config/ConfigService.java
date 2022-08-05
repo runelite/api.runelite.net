@@ -39,6 +39,7 @@ import static com.mongodb.client.model.Updates.unset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -82,17 +83,16 @@ public class ConfigService
 		return mongoCollection.find(eq("_userId", userId)).first();
 	}
 
-	public Configuration get(int userId)
+	public Map<String, String> get(int userId)
 	{
 		Map<String, Object> configMap = getConfig(userId);
 
 		if (configMap == null || configMap.isEmpty())
 		{
-			return new Configuration(Collections.emptyList());
+			return Collections.emptyMap();
 		}
 
-		List<ConfigEntry> config = new ArrayList<>();
-
+		Map<String, String> userConfig = new LinkedHashMap<>();
 		for (String group : configMap.keySet())
 		{
 			// Reserved keys
@@ -117,14 +117,14 @@ public class ConfigService
 					continue;
 				}
 
-				ConfigEntry configEntry = new ConfigEntry();
-				configEntry.setKey(group + "." + key.replace(':', '.'));
-				configEntry.setValue(value.toString());
-				config.add(configEntry);
+				userConfig.put(
+					group + "." + key.replace(':', '.'),
+					value.toString()
+				);
 			}
 		}
 
-		return new Configuration(config);
+		return userConfig;
 	}
 
 	public List<String> patch(int userID, Configuration config)

@@ -25,9 +25,12 @@
 package net.runelite.http.service.config;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import net.runelite.http.api.config.ConfigEntry;
 import net.runelite.http.api.config.Configuration;
 import net.runelite.http.service.account.AuthFilter;
 import net.runelite.http.service.account.beans.SessionEntry;
@@ -57,6 +60,30 @@ public class ConfigController
 
 	@GetMapping
 	public Configuration get(HttpServletRequest request, HttpServletResponse response) throws IOException
+	{
+		SessionEntry session = authFilter.handle(request, response);
+
+		if (session == null)
+		{
+			return null;
+		}
+
+		Map<String, String> userConfig = configService.get(session.getUser());
+
+		List<ConfigEntry> config = new ArrayList<>(userConfig.size());
+		for (Map.Entry<String, String> entry : userConfig.entrySet())
+		{
+			ConfigEntry c = new ConfigEntry();
+			c.setKey(entry.getKey());
+			c.setValue(entry.getValue());
+			config.add(c);
+		}
+
+		return new Configuration(config);
+	}
+
+	@GetMapping("/v2")
+	public Map<String, String> get2(HttpServletRequest request, HttpServletResponse response) throws IOException
 	{
 		SessionEntry session = authFilter.handle(request, response);
 
