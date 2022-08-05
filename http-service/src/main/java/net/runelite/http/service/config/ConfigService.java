@@ -24,14 +24,8 @@
  */
 package net.runelite.http.service.config;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSyntaxException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -47,7 +41,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import net.runelite.http.api.RuneLiteAPI;
 import net.runelite.http.api.config.ConfigEntry;
@@ -61,8 +54,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ConfigService
 {
-	private static final Pattern MAYBE_JSON = Pattern.compile("^[\\-0-9{\\[\"]|true|false");
-	private static final int MAX_DEPTH = 8;
 	private static final int MAX_VALUE_LENGTH = 262144;
 
 	private final Gson GSON = RuneLiteAPI.GSON;
@@ -186,26 +177,12 @@ public class ConfigService
 			return unset(dbKey);
 		}
 
-		Object jsonValue;
-		if (!isMaybeJson(value))
+		if (!validateStr(value))
 		{
-			if (!validateStr(value))
-			{
-				return null;
-			}
-
-			jsonValue = value;
+			return null;
 		}
-		else
-		{
-			if (!validateJson(value))
-			{
-				return null;
-			}
 
-			jsonValue = parseJsonString(value);
-		}
-		return set(dbKey, jsonValue);
+		return set(dbKey, value);
 	}
 
 	public boolean setKey(
@@ -241,127 +218,8 @@ public class ConfigService
 		return true;
 	}
 
-	@VisibleForTesting
-	static Object parseJsonString(String value)
-	{
-		Object jsonValue;
-		try
-		{
-			jsonValue = RuneLiteAPI.GSON.fromJson(value, Object.class);
-			if (jsonValue == null)
-			{
-				return value;
-			}
-			else if (jsonValue instanceof Double || jsonValue instanceof Float)
-			{
-				Number number = (Number) jsonValue;
-				if (Math.floor(number.doubleValue()) == number.doubleValue() && !Double.isInfinite(number.doubleValue()))
-				{
-					// value is an int or long. 'number' might be truncated so parse it from 'value'
-					try
-					{
-						jsonValue = Integer.parseInt(value);
-					}
-					catch (NumberFormatException ex)
-					{
-						try
-						{
-							jsonValue = Long.parseLong(value);
-						}
-						catch (NumberFormatException ex2)
-						{
-
-						}
-					}
-				}
-			}
-		}
-		catch (JsonSyntaxException ex)
-		{
-			jsonValue = value;
-		}
-		return jsonValue;
-	}
-
-	@VisibleForTesting
-	static boolean isMaybeJson(String value)
-	{
-		return MAYBE_JSON.matcher(value).find();
-	}
-
 	private static boolean validateStr(String value)
 	{
 		return value.length() < MAX_VALUE_LENGTH;
-	}
-
-	@VisibleForTesting
-	static boolean validateJson(String value)
-	{
-		try
-		{
-			// I couldn't figure out a better way to do this than a second json parse
-			JsonElement jsonElement = RuneLiteAPI.GSON.fromJson(value, JsonElement.class);
-			if (jsonElement == null)
-			{
-				return value.length() < MAX_VALUE_LENGTH;
-			}
-			return validateObject(jsonElement, 1);
-		}
-		catch (JsonSyntaxException ex)
-		{
-			// the client submits the string representation of objects which is not always valid json,
-			// eg. a value with a ':' in it. We just ignore it now. We can't json encode the values client
-			// side due to them already being strings, which prevents gson from being able to convert them
-			// to ints/floats/maps etc.
-			return value.length() < MAX_VALUE_LENGTH;
-		}
-	}
-
-	private static boolean validateObject(JsonElement jsonElement, int depth)
-	{
-		if (depth >= MAX_DEPTH)
-		{
-			return false;
-		}
-
-		if (jsonElement.isJsonObject())
-		{
-			JsonObject jsonObject = jsonElement.getAsJsonObject();
-
-			for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet())
-			{
-				JsonElement element = entry.getValue();
-
-				if (!validateObject(element, depth + 1))
-				{
-					return false;
-				}
-			}
-		}
-		else if (jsonElement.isJsonArray())
-		{
-			JsonArray jsonArray = jsonElement.getAsJsonArray();
-
-			for (int i = 0; i < jsonArray.size(); ++i)
-			{
-				JsonElement element = jsonArray.get(i);
-
-				if (!validateObject(element, depth + 1))
-				{
-					return false;
-				}
-			}
-		}
-		else if (jsonElement.isJsonPrimitive())
-		{
-			JsonPrimitive jsonPrimitive = jsonElement.getAsJsonPrimitive();
-			String value = jsonPrimitive.getAsString();
-			if (value.length() >= MAX_VALUE_LENGTH)
-			{
-				return false;
-			}
-		}
-
-		return true;
 	}
 }
