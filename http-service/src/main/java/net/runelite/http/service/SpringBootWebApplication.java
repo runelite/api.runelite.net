@@ -49,6 +49,8 @@ import org.slf4j.impl.StaticLoggerBinder;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.metrics.jdbc.DataSourcePoolMetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.mongo.MongoMetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
@@ -63,7 +65,14 @@ import org.sql2o.Sql2o;
 import org.sql2o.converters.Converter;
 import org.sql2o.quirks.NoQuirks;
 
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+@SpringBootApplication(exclude = {
+	DataSourceAutoConfiguration.class,
+	// hikaricp and its micrometer classes are on the main tomcat classloader,
+	// causing a linkerror
+	DataSourcePoolMetricsAutoConfiguration.class,
+	// our mongodb driver version is too old for what spring expects
+	MongoMetricsAutoConfiguration.class
+})
 @EnableScheduling
 @Slf4j
 public class SpringBootWebApplication extends SpringBootServletInitializer

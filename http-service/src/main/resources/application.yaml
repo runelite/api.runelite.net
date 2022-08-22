@@ -10,6 +10,14 @@ datasource:
 # fails when starting the 2nd api
 spring.jmx.enabled: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - prometheus
+
 # Google OAuth client
 oauth:
   client-id:
