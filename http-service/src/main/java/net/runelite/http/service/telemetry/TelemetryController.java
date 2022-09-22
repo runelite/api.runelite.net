@@ -27,15 +27,18 @@ package net.runelite.http.service.telemetry;
 import com.google.common.base.Strings;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.http.api.telemetry.Telemetry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/telemetry")
+@Slf4j
 public class TelemetryController
 {
 	private final MeterRegistry meterRegistry;
@@ -85,5 +88,16 @@ public class TelemetryController
 		{
 			memoryDistribution.record((double) (telemetry.getTotalMemory() / 1024L / 1024L));
 		}
+	}
+
+	@PostMapping("/error")
+	public void error(@RequestParam String type, @RequestParam String error)
+	{
+		log.info("Client error: {} - {}", type, error);
+
+		meterRegistry.counter("runelite client error",
+			"type", type,
+			"error", error
+		).increment();
 	}
 }
