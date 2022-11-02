@@ -37,4 +37,6 @@ class PriceEntry
 	private Instant fetched_time;
 	private int high;
 	private int low;
+	private int fsw_high;
+	private int fsw_low;
 }

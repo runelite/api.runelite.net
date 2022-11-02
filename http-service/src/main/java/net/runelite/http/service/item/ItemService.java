@@ -105,11 +105,14 @@ public class ItemService
 	{
 		try (Connection con = sql2o.beginTransaction())
 		{
-			Query query = con.createQuery("select t2.item, t3.name, t2.time, prices.price, prices.fetched_time, t4.high, t4.low" +
+			Query query = con.createQuery("select t2.item, t3.name, t2.time, prices.price, prices.fetched_time, " +
+				" wprices_osrs.high, wprices_osrs.low, wprices_fsw.high as fsw_high, wprices_fsw.low as fsw_low " +
 				"  from (select t1.item as item, max(t1.time) as time from prices t1 group by item) t2" +
 				"  join prices on t2.item=prices.item and t2.time=prices.time" +
 				"  join items t3 on t2.item=t3.id" +
-				"  join wiki_prices t4 on t2.item=t4.item_id");
+				"  join wiki_prices2 wprices_osrs on t2.item=wprices_osrs.item_id and wprices_osrs.gamemode = 'OSRS'" +
+				"  join wiki_prices2 wprices_fsw on t2.item=wprices_fsw.item_id and wprices_fsw.gamemode = 'FSW'"
+			);
 			return query.executeAndFetch(PriceEntry.class);
 		}
 	}

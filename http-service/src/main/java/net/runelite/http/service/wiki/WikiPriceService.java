@@ -47,30 +47,34 @@ import org.sql2o.Sql2o;
 @Slf4j
 public class WikiPriceService
 {
-	private static final String CREATE = "CREATE TABLE IF NOT EXISTS `wiki_prices` (\n" +
+	private static final String CREATE = "CREATE TABLE IF NOT EXISTS `wiki_prices2` (\n" +
+		"  `gamemode` enum('OSRS', 'FSW'),\n" +
 		"  `item_id` int(11) NOT NULL,\n" +
 		"  `high` int(11) NOT NULL,\n" +
 		"  `highTime` int(11) NOT NULL,\n" +
 		"  `low` int(11) NOT NULL,\n" +
 		"  `lowTime` int(11) NOT NULL,\n" +
 		"  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" +
-		"  PRIMARY KEY (`item_id`)\n" +
+		"  PRIMARY KEY (`gamemode`, `item_id`)\n" +
 		") ENGINE=InnoDB;";
 
 	private final Sql2o sql2o;
 	private final OkHttpClient okHttpClient;
 	private final HttpUrl wikiUrl;
+	private final HttpUrl fswUrl;
 
 	@Autowired
 	public WikiPriceService(
 		@Qualifier("Runelite SQL2O") Sql2o sql2o,
 		OkHttpClient okHttpClient,
-		@Value("${runelite.wiki.url}") String url
+		@Value("${runelite.wiki.url}") String url,
+		@Value("${runelite.wiki.fswUrl}") String fswUrl
 	)
 	{
 		this.sql2o = sql2o;
 		this.okHttpClient = okHttpClient;
 		this.wikiUrl = HttpUrl.get(url);
+		this.fswUrl = HttpUrl.get(fswUrl);
 
 		try (Connection con = sql2o.open())
 		{
@@ -83,43 +87,58 @@ public class WikiPriceService
 	{
 		try
 		{
-			PriceResult summary = getPrices();
-
-			try (Connection con = sql2o.beginTransaction())
-			{
-				Query query = con.createQuery("INSERT INTO wiki_prices (item_id, high, highTime, low, lowTime)"
-					+ "  VALUES (:itemId, :high, :highTime, :low, :lowTime)"
-					+ " ON DUPLICATE KEY UPDATE high = VALUES(high), highTime = VALUES(highTime),"
-					+ " low = VALUES(low), lowTime = VALUES(lowTime)");
-
-				for (Map.Entry<Integer, PriceResult.Item> entry : summary.getData().entrySet())
-				{
-					Integer itemId = entry.getKey();
-					PriceResult.Item item = entry.getValue();
-
-					query
-						.addParameter("itemId", itemId)
-						.addParameter("high", item.getHigh())
-						.addParameter("highTime", item.getHighTime())
-						.addParameter("low", item.getLow())
-						.addParameter("lowTime", item.getLowTime())
-						.addToBatch();
-				}
-
-				query.executeBatch();
-				con.commit(false);
-			}
+			PriceResult summary = getPrices(wikiUrl);
+			insertPrices("OSRS", summary);
 		}
 		catch (IOException e)
 		{
 			log.warn("Error while updating wiki prices", e);
 		}
+
+		try
+		{
+			PriceResult summary = getPrices(fswUrl);
+			insertPrices("FSW", summary);
+		}
+		catch (IOException e)
+		{
+			log.warn("Error while updating wiki fsw prices", e);
+		}
 	}
 
-	private PriceResult getPrices() throws IOException
+	private void insertPrices(String gamemode, PriceResult summary)
+	{
+		try (Connection con = sql2o.beginTransaction())
+		{
+			Query query = con.createQuery("INSERT INTO wiki_prices2 (gamemode, item_id, high, highTime, low, lowTime)"
+				+ "  VALUES (:gamemode, :itemId, :high, :highTime, :low, :lowTime)"
+				+ " ON DUPLICATE KEY UPDATE high = VALUES(high), highTime = VALUES(highTime),"
+				+ " low = VALUES(low), lowTime = VALUES(lowTime)");
+
+			for (Map.Entry<Integer, PriceResult.Item> entry : summary.getData().entrySet())
+			{
+				Integer itemId = entry.getKey();
+				PriceResult.Item item = entry.getValue();
+
+				query
+					.addParameter("gamemode", gamemode)
+					.addParameter("itemId", itemId)
+					.addParameter("high", item.getHigh())
+					.addParameter("highTime", item.getHighTime())
+					.addParameter("low", item.getLow())
+					.addParameter("lowTime", item.getLowTime())
+					.addToBatch();
+			}
+
+			query.executeBatch();
+			con.commit(false);
+		}
+	}
+
+	private PriceResult getPrices(HttpUrl url) throws IOException
 	{
 		Request request = new Request.Builder()
-			.url(wikiUrl)
+			.url(url)
 			.header("User-Agent", "RuneLite")
 			.build();
 

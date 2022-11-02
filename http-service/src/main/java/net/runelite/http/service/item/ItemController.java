@@ -82,21 +82,22 @@ public class ItemController
 				itemPrice.setId(priceEntry.getItem());
 				itemPrice.setName(priceEntry.getName());
 				itemPrice.setPrice(priceEntry.getPrice());
-				itemPrice.setWikiPrice(computeWikiPrice(priceEntry));
+				itemPrice.setWikiPrice(computeWikiPrice(priceEntry.getLow(), priceEntry.getHigh()));
+				itemPrice.setWikiPriceFsw(computeWikiPrice(priceEntry.getFsw_low(), priceEntry.getFsw_high()));
 				return itemPrice;
 			})
 			.toArray(ItemPrice[]::new)), priceCache, TimeUnit.MINUTES);
 	}
 
-	private static int computeWikiPrice(PriceEntry priceEntry)
+	private static int computeWikiPrice(int low, int high)
 	{
-		if (priceEntry.getLow() > 0 && priceEntry.getHigh() > 0)
+		if (low > 0 && high > 0)
 		{
-			return (priceEntry.getLow() + priceEntry.getHigh()) / 2;
+			return (low + high) / 2;
 		}
 		else
 		{
-			return Math.max(priceEntry.getLow(), priceEntry.getHigh());
+			return Math.max(low, high);
 		}
 	}
 
