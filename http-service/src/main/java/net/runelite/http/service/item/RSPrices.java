@@ -24,14 +24,18 @@
  */
 package net.runelite.http.service.item;
 
+import java.time.Instant;
 import java.util.Map;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-public class RSPrices
+@AllArgsConstructor
+class RSPrices
 {
+	Instant date;
 	/**
-	 * unix time in ms to price in gp
+	 * item id to price
 	 */
-	private Map<Long, Integer> daily;
+	Map<Integer, Integer> prices;
 }

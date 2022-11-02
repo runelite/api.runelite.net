@@ -24,19 +24,19 @@
  */
 package net.runelite.http.service.item;
 
-import com.google.gson.JsonParseException;
+import com.google.common.annotations.VisibleForTesting;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.cache.definitions.ItemDefinition;
-import net.runelite.http.api.RuneLiteAPI;
-import net.runelite.http.api.item.ItemType;
 import net.runelite.http.service.cache.CacheService;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -76,26 +76,20 @@ public class ItemService
 	private final Sql2o sql2o;
 	private final CacheService cacheService;
 	private final OkHttpClient okHttpClient;
-	private final HttpUrl itemUrl;
-	private final HttpUrl priceUrl;
-
-	private int[] tradeableItems;
-	private final Random random = new Random();
+	private final HttpUrl digestUrl;
 
 	@Autowired
 	public ItemService(
 		@Qualifier("Runelite SQL2O") Sql2o sql2o,
 		CacheService cacheService,
 		OkHttpClient okHttpClient,
-		@Value("${runelite.item.itemUrl}") String itemUrl,
-		@Value("${runelite.item.priceUrl}") String priceUrl
+		@Value("${runelite.item.digestUrl}") String digestUrl
 	)
 	{
 		this.sql2o = sql2o;
 		this.cacheService = cacheService;
 		this.okHttpClient = okHttpClient;
-		this.itemUrl = HttpUrl.get(itemUrl);
-		this.priceUrl = HttpUrl.get(priceUrl);
+		this.digestUrl = HttpUrl.get(digestUrl);
 
 		try (Connection con = sql2o.open())
 		{
@@ -104,88 +98,6 @@ public class ItemService
 
 			con.createQuery(CREATE_PRICES)
 				.executeUpdate();
-		}
-	}
-
-	public ItemEntry getItem(int itemId)
-	{
-		try (Connection con = sql2o.open())
-		{
-			return con.createQuery("select id, name, description, type from items where id = :id")
-				.addParameter("id", itemId)
-				.executeAndFetchFirst(ItemEntry.class);
-		}
-	}
-
-	public ItemEntry fetchItem(int itemId)
-	{
-		try
-		{
-			RSItem rsItem = fetchRSItem(itemId);
-
-			try (Connection con = sql2o.open())
-			{
-				con.createQuery("insert into items (id, name, description, type) values (:id,"
-					+ " :name, :description, :type) ON DUPLICATE KEY UPDATE name = :name,"
-					+ " description = :description, type = :type")
-					.addParameter("id", rsItem.getId())
-					.addParameter("name", rsItem.getName())
-					.addParameter("description", rsItem.getDescription())
-					.addParameter("type", rsItem.getType())
-					.executeUpdate();
-			}
-
-			ItemEntry item = new ItemEntry();
-			item.setId(itemId);
-			item.setName(rsItem.getName());
-			item.setDescription(rsItem.getDescription());
-			item.setType(ItemType.of(rsItem.getType()));
-			return item;
-		}
-		catch (IOException ex)
-		{
-			log.warn("unable to fetch item {}", itemId, ex);
-			return null;
-		}
-	}
-
-	private void fetchPrice(int itemId)
-	{
-		RSPrices rsprice;
-		try
-		{
-			rsprice = fetchRSPrices(itemId);
-		}
-		catch (IOException ex)
-		{
-			log.warn("unable to fetch price for item {}", itemId, ex);
-			return;
-		}
-
-		try (Connection con = sql2o.beginTransaction())
-		{
-			Instant now = Instant.now();
-
-			Query query = con.createQuery("insert into prices (item, price, time, fetched_time) values (:item, :price, :time, :fetched_time) "
-				+ "ON DUPLICATE KEY UPDATE price = VALUES(price), fetched_time = VALUES(fetched_time)");
-
-			for (Map.Entry<Long, Integer> entry : rsprice.getDaily().entrySet())
-			{
-				long ts = entry.getKey(); // ms since epoch
-				int price = entry.getValue(); // gp
-
-				Instant time = Instant.ofEpochMilli(ts);
-
-				query
-					.addParameter("item", itemId)
-					.addParameter("price", price)
-					.addParameter("time", time)
-					.addParameter("fetched_time", now)
-					.addToBatch();
-			}
-
-			query.executeBatch();
-			con.commit(false);
 		}
 	}
 
@@ -202,38 +114,12 @@ public class ItemService
 		}
 	}
 
-	private RSItem fetchRSItem(int itemId) throws IOException
+	private RSPrices fetchRsPrices() throws IOException
 	{
-		HttpUrl itemUrl = this.itemUrl
-			.newBuilder()
-			.addQueryParameter("item", "" + itemId)
-			.build();
-
 		Request request = new Request.Builder()
-			.url(itemUrl)
+			.url(digestUrl)
 			.build();
 
-		RSItemResponse itemResponse = fetchJson(request, RSItemResponse.class);
-		return itemResponse.getItem();
-
-	}
-
-	private RSPrices fetchRSPrices(int itemId) throws IOException
-	{
-		HttpUrl priceUrl = this.priceUrl
-			.newBuilder()
-			.addPathSegment(itemId + ".json")
-			.build();
-
-		Request request = new Request.Builder()
-			.url(priceUrl)
-			.build();
-
-		return fetchJson(request, RSPrices.class);
-	}
-
-	private <T> T fetchJson(Request request, Class<T> clazz) throws IOException
-	{
 		try (Response response = okHttpClient.newCall(request).execute())
 		{
 			if (!response.isSuccessful())
@@ -241,31 +127,42 @@ public class ItemService
 				throw new IOException("Unsuccessful http response: " + response);
 			}
 
-			InputStream in = response.body().byteStream();
-			return RuneLiteAPI.GSON.fromJson(new InputStreamReader(in, StandardCharsets.UTF_8), clazz);
-		}
-		catch (JsonParseException ex)
-		{
-			throw new IOException(ex);
+			try (final BufferedReader reader = new BufferedReader(new InputStreamReader(response.body().byteStream())))
+			{
+				String header = reader.readLine();
+				Instant date = parseHeaderDate(header);
+				Map<Integer, Integer> prices = new HashMap<>();
+
+				for (String line; (line = reader.readLine()) != null; )
+				{
+					line = line.trim();
+					if (line.isEmpty())
+					{
+						continue;
+					}
+
+					String[] split = line.split(",");
+					int itemId = Integer.parseInt(split[0]);
+					int price = Integer.parseInt(split[1]);
+					prices.put(itemId, price);
+				}
+
+				return new RSPrices(date, prices);
+			}
 		}
 	}
 
-	@Scheduled(fixedDelay = 20_000)
-	public void crawlPrices()
+	@VisibleForTesting
+	static Instant parseHeaderDate(String header)
 	{
-		if (tradeableItems == null || tradeableItems.length == 0)
-		{
-			return;
-		}
-
-		int idx = random.nextInt(tradeableItems.length);
-		int id = tradeableItems[idx];
-
-		log.debug("Fetching price for {}", id);
-
-		// check if the item name or description has changed
-		fetchItem(id);
-		fetchPrice(id);
+		// ID,Current Cost (as of 02-Nov-2022 10:52)
+		int l = header.indexOf("as of ");
+		String date = header.substring(l + 6, header.length() - 1);
+		DateTimeFormatter pattern = new DateTimeFormatterBuilder()
+			.appendPattern("dd-MMM-yyyy HH:mm")
+			.toFormatter()
+			.withZone(ZoneId.of("GMT"));
+		return pattern.parse(date, Instant::from);
 	}
 
 	@Scheduled(fixedDelay = 1_800_000) // 30 minutes
@@ -277,11 +174,73 @@ public class ItemService
 			log.warn("Failed to load any items from cache, item price updating will be disabled");
 		}
 
-		tradeableItems = items.stream()
-			.filter(ItemDefinition::isTradeable)
-			.mapToInt(ItemDefinition::getId)
-			.toArray();
+		// catch any item renames
+		insertItems(items);
 
-		log.debug("Loaded {} tradeable items", tradeableItems.length);
+		RSPrices rsPrices = fetchRsPrices();
+		insertPrices(rsPrices);
+	}
+
+	private void insertItems(List<ItemDefinition> items)
+	{
+		try (Connection con = sql2o.beginTransaction())
+		{
+			int inserted = 0;
+			Query query = con.createQuery("insert into items (id, name, description, type) values (:id,"
+				+ " :name, :description, :type) ON DUPLICATE KEY UPDATE name = :name,"
+				+ " description = :description, type = :type");
+
+			for (ItemDefinition itemDefinition : items)
+			{
+				if (!itemDefinition.isTradeable())
+				{
+					continue;
+				}
+
+				query
+					.addParameter("id", itemDefinition.getId())
+					.addParameter("name", itemDefinition.getName())
+					// these two are still in the table, but are unused
+					.addParameter("description", "unknown")
+					.addParameter("type", "DEFAULT")
+					.addToBatch();
+				++inserted;
+			}
+
+			query.executeBatch();
+			con.commit(false);
+
+			log.debug("Inserted {} items", inserted);
+		}
+	}
+
+	private void insertPrices(RSPrices prices)
+	{
+		try (Connection con = sql2o.beginTransaction())
+		{
+			Instant now = Instant.now();
+			Instant priceTime = prices.date;
+
+			Query query = con.createQuery("insert into prices (item, price, time, fetched_time) values (:item, :price, :time, :fetched_time) "
+				+ "ON DUPLICATE KEY UPDATE price = VALUES(price), fetched_time = VALUES(fetched_time)");
+
+			for (Map.Entry<Integer, Integer> entry : prices.prices.entrySet())
+			{
+				int itemId = entry.getKey();
+				int price = entry.getValue(); // gp
+
+				query
+					.addParameter("item", itemId)
+					.addParameter("price", price)
+					.addParameter("time", priceTime)
+					.addParameter("fetched_time", now)
+					.addToBatch();
+			}
+
+			query.executeBatch();
+			con.commit(false);
+
+			log.debug("Inserted {} prices", prices.prices.size());
+		}
 	}
 }

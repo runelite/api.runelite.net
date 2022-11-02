@@ -67,5 +67,4 @@ runelite:
   osrsnews:
     rssUrl: https://services.runescape.com/m=news/latest_news.rss?oldschool=true
   item:
-    itemUrl: https://services.runescape.com/m=itemdb_oldschool/api/catalogue/detail.json
-    priceUrl: https://services.runescape.com/m=itemdb_oldschool/api/graph
+    digestUrl: https://secure.runescape.com/m=itemdb_oldschool/digest.csv

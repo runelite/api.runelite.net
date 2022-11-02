@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2022, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,13 +24,16 @@
  */
 package net.runelite.http.service.item;
 
-import lombok.Data;
+import java.time.Instant;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
-@Data
-class RSItem
+public class ItemServiceTest
 {
-	private int id;
-	private String name;
-	private String description;
-	private String type;
+	@Test
+	public void testParseHeaderDate()
+	{
+		Instant instant = ItemService.parseHeaderDate("ID,Current Cost (as of 02-Nov-2022 10:52)");
+		assertEquals(Instant.parse("2022-11-02T10:52:00Z"), instant);
+	}
 }
