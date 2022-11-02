@@ -110,8 +110,8 @@ public class ItemService
 				"  from (select t1.item as item, max(t1.time) as time from prices t1 group by item) t2" +
 				"  join prices on t2.item=prices.item and t2.time=prices.time" +
 				"  join items t3 on t2.item=t3.id" +
-				"  join wiki_prices2 wprices_osrs on t2.item=wprices_osrs.item_id and wprices_osrs.gamemode = 'OSRS'" +
-				"  join wiki_prices2 wprices_fsw on t2.item=wprices_fsw.item_id and wprices_fsw.gamemode = 'FSW'"
+				"  left join wiki_prices2 wprices_osrs on t2.item=wprices_osrs.item_id and wprices_osrs.gamemode = 'OSRS'" +
+				"  left join wiki_prices2 wprices_fsw on t2.item=wprices_fsw.item_id and wprices_fsw.gamemode = 'FSW'"
 			);
 			return query.executeAndFetch(PriceEntry.class);
 		}
