@@ -54,7 +54,7 @@ public class ItemController
 			Hasher hasher = Hashing.sha256().newHasher();
 			for (ItemPrice itemPrice : prices)
 			{
-				hasher.putInt(itemPrice.getId()).putInt(itemPrice.getPrice());
+				hasher.putInt(itemPrice.hashCode());
 			}
 			HashCode code = hasher.hash();
 			hash = code.toString();
