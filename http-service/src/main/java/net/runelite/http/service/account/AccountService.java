@@ -68,7 +68,7 @@ public class AccountService
 	private static final String EMAIL_HASH_SALT = "runelite";
 
 	private static final String CREATE_SESSIONS = "CREATE TABLE IF NOT EXISTS `sessions` (\n"
-		+ "  `user` int(11) NOT NULL PRIMARY KEY,\n"
+		+ "  `user` int(11) NOT NULL,\n"
 		+ "  `uuid` varchar(36) NOT NULL,\n"
 		+ "  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n"
 		+ "  `last_used` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n"
