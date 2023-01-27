@@ -196,39 +196,6 @@ public class ConfigService
 		return set(dbKey, value);
 	}
 
-	public boolean setKey(
-		int userId,
-		String key,
-		@Nullable String value
-	)
-	{
-		Bson set = setForKV(key, value);
-		if (set == null)
-		{
-			return false;
-		}
-
-		mongoCollection.updateOne(eq("_userId", userId),
-			set,
-			upsertUpdateOptions);
-		return true;
-	}
-
-	public boolean unsetKey(
-		int userId,
-		String key
-	)
-	{
-		Bson set = setForKV(key, null);
-		if (set == null)
-		{
-			return false;
-		}
-
-		mongoCollection.updateOne(eq("_userId", userId), set);
-		return true;
-	}
-
 	private static boolean validateStr(String value)
 	{
 		return value.length() < MAX_VALUE_LENGTH;

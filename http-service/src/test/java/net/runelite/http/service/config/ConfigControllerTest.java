@@ -24,9 +24,11 @@
  */
 package net.runelite.http.service.config;
 
+import com.google.gson.Gson;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import net.runelite.http.api.config.ConfigPatch;
 import net.runelite.http.service.account.AuthFilter;
 import net.runelite.http.service.account.beans.SessionEntry;
 import org.junit.Before;
@@ -34,7 +36,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -46,7 +47,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
@@ -68,18 +69,19 @@ public class ConfigControllerTest
 	{
 		when(authFilter.handle(any(HttpServletRequest.class), any(HttpServletResponse.class)))
 			.thenReturn(mock(SessionEntry.class));
-
-		when(configService.setKey(anyInt(), anyString(), anyString())).thenReturn(true);
 	}
 
 	@Test
 	public void testSetKey() throws Exception
 	{
-		mockMvc.perform(put("/config/key")
-			.content("value")
-			.contentType(MediaType.TEXT_PLAIN))
+		ConfigPatch patch = new ConfigPatch();
+		patch.getEdit().put("group.key", "value");
+
+		mockMvc.perform(patch("/config/v2")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(new Gson().toJson(patch)))
 			.andExpect(status().isOk());
 
-		verify(configService).setKey(anyInt(), eq("key"), eq("value"));
+		verify(configService).patch(anyInt(), eq(patch));
 	}
 }
