@@ -77,12 +77,9 @@ public class TelemetryController
 				.increment();
 		}
 
-		if (!Strings.isNullOrEmpty(telemetry.getLauncherVersion()))
-		{
-			meterRegistry.counter("runelite client launcher version",
-				"version", telemetry.getLauncherVersion())
-				.increment();
-		}
+		meterRegistry.counter("runelite client launcher version",
+			"version", !Strings.isNullOrEmpty(telemetry.getLauncherVersion()) ? telemetry.getLauncherVersion() : "pre1.6")
+			.increment();
 
 		if (telemetry.getTotalMemory() > 0L)
 		{
