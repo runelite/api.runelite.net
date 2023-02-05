@@ -24,17 +24,17 @@
  */
 package net.runelite.http.service.item;
 
-import com.google.common.base.Suppliers;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import net.runelite.http.api.item.ItemPrice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -64,7 +64,7 @@ public class ItemController
 	private final ItemService itemService;
 	private final int priceCache;
 
-	private final Supplier<MemoizedPrices> memoizedPrices;
+	private MemoizedPrices memoizedPrices;
 
 	@Autowired
 	public ItemController(
@@ -74,8 +74,12 @@ public class ItemController
 	{
 		this.itemService = itemService;
 		this.priceCache = priceCache;
+	}
 
-		memoizedPrices = Suppliers.memoizeWithExpiration(() -> new MemoizedPrices(itemService.fetchPrices().stream()
+	@Scheduled(fixedDelayString = "${runelite.price.cache}", timeUnit = TimeUnit.MINUTES)
+	private void updatePrices()
+	{
+		memoizedPrices = new MemoizedPrices(itemService.fetchPrices().stream()
 			.map(priceEntry ->
 			{
 				ItemPrice itemPrice = new ItemPrice();
@@ -86,7 +90,7 @@ public class ItemController
 				itemPrice.setWikiPriceFsw(computeWikiPrice(priceEntry.getFsw_low(), priceEntry.getFsw_high()));
 				return itemPrice;
 			})
-			.toArray(ItemPrice[]::new)), priceCache, TimeUnit.MINUTES);
+			.toArray(ItemPrice[]::new));
 	}
 
 	private static int computeWikiPrice(int low, int high)
@@ -104,10 +108,16 @@ public class ItemController
 	@RequestMapping(value = { "/prices", "/prices.js" })
 	public ResponseEntity<ItemPrice[]> prices()
 	{
-		MemoizedPrices memorizedPrices = this.memoizedPrices.get();
+		if (memoizedPrices == null)
+		{
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.cacheControl(CacheControl.noCache())
+				.build();
+		}
+
 		return ResponseEntity.ok()
-			.eTag(memorizedPrices.hash)
+			.eTag(memoizedPrices.hash)
 			.cacheControl(CacheControl.maxAge(priceCache, TimeUnit.MINUTES).cachePublic())
-			.body(memorizedPrices.prices);
+			.body(memoizedPrices.prices);
 	}
 }
