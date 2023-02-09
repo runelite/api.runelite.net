@@ -38,7 +38,6 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.build.outputTimestamp>1</project.build.outputTimestamp>
-		<java.release>8</java.release>
 		<lombok.version>1.18.20</lombok.version>
 		<logback.version>1.2.9</logback.version>
 		<slf4j.version>1.7.25</slf4j.version>
@@ -183,13 +182,6 @@
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<release>${java.release}</release>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
