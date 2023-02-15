@@ -30,14 +30,22 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.runelite.http.api.config.ConfigPatch;
+import net.runelite.http.api.config.ConfigPatchResult;
+import net.runelite.http.api.config.Profile;
+import net.runelite.http.api.config.Configuration;
 import net.runelite.http.service.account.AuthFilter;
 import net.runelite.http.service.account.beans.SessionEntry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/config")
@@ -63,7 +71,7 @@ public class ConfigController
 			return null;
 		}
 
-		return configService.get(session.getUser());
+		return configService.getV2(session.getUser());
 	}
 
 	@PatchMapping("/v2")
@@ -79,7 +87,7 @@ public class ConfigController
 			return null;
 		}
 
-		List<String> failures = configService.patch(session.getUser(), patch);
+		List<String> failures = configService.patchV2(session.getUser(), patch);
 		if (failures.size() != 0)
 		{
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -87,5 +95,91 @@ public class ConfigController
 		}
 
 		return null;
+	}
+
+	@GetMapping("/v3/list")
+	public List<Profile> listProfiles(HttpServletRequest request, HttpServletResponse response) throws IOException
+	{
+		SessionEntry session = authFilter.handle(request, response);
+		if (session == null)
+		{
+			return null;
+		}
+
+		return configService.listProfiles(session.getUser());
+	}
+
+	@GetMapping("/v3/{profileId}")
+	public Configuration get3(HttpServletRequest request, HttpServletResponse response, @PathVariable long profileId) throws IOException
+	{
+		SessionEntry session = authFilter.handle(request, response);
+		if (session == null)
+		{
+			return null;
+		}
+
+		return configService.getV3(session.getUser(), profileId);
+	}
+
+	@PatchMapping("/v3/{profileId}")
+	public ConfigPatchResult patch3(
+		HttpServletRequest request,
+		HttpServletResponse response,
+		@PathVariable long profileId,
+		@RequestBody ConfigPatch patch
+	) throws IOException
+	{
+		SessionEntry session = authFilter.handle(request, response);
+		if (session == null)
+		{
+			return null;
+		}
+
+		ConfigPatchResult result = configService.patchV3(session.getUser(), profileId, patch);
+		if (result.getFailures().size() != 0)
+		{
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		}
+
+		return result;
+	}
+
+	@PostMapping("/v3/{profileId}/name")
+	public void rename3(
+		HttpServletRequest request,
+		HttpServletResponse response,
+		@PathVariable long profileId,
+		@RequestBody String name
+	) throws IOException
+	{
+		SessionEntry session = authFilter.handle(request, response);
+		if (session == null)
+		{
+			return;
+		}
+
+		if (!configService.renameV3(session.getUser(), profileId, name))
+		{
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "profile not found");
+		}
+	}
+
+	@DeleteMapping("/v3/{profileId}")
+	public void delete3(
+		HttpServletRequest request,
+		HttpServletResponse response,
+		@PathVariable long profileId
+	) throws IOException
+	{
+		SessionEntry session = authFilter.handle(request, response);
+		if (session == null)
+		{
+			return;
+		}
+
+		if (!configService.deleteV3(session.getUser(), profileId))
+		{
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "profile not found");
+		}
 	}
 }

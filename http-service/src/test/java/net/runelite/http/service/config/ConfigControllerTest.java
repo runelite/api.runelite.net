@@ -82,6 +82,6 @@ public class ConfigControllerTest
 			.content(new Gson().toJson(patch)))
 			.andExpect(status().isOk());
 
-		verify(configService).patch(anyInt(), eq(patch));
+		verify(configService).patchV2(anyInt(), eq(patch));
 	}
 }
