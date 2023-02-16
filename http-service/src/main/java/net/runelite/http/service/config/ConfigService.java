@@ -108,7 +108,7 @@ public class ConfigService
 	public List<Profile> listProfiles(int userId)
 	{
 		ArrayList<Profile> profiles = new ArrayList<>(2);
-		Document migratingDocument = null;
+		boolean needMigration = false;
 
 		try (MongoCursor<Document> profileDocs = mongoCollection.find(eq("_userId", userId))
 			.projection(fields(include("_profile")))  // mongo will still return a document containing only _id when _profile is undefined
@@ -129,18 +129,25 @@ public class ConfigService
 				}
 				else
 				{
-					migratingDocument = next;
+					needMigration = true;
 				}
 			}
 		}
 
-		if (migratingDocument != null)
+		if (needMigration)
 		{
+			Document old = mongoCollection.find(and(eq("_userId", userId), eq("_profile", null))).first();
+			if (old == null)
+			{
+				log.warn("unable to find null profile for user {} to migrate", userId);
+				return profiles;
+			}
+
 			List<Bson> sets = new ArrayList<>();
 			List<Bson> unsets = new ArrayList<>();
 
 			int migrated = 0;
-			for (Map.Entry<String, Object> entry : migratingDocument.entrySet())
+			for (Map.Entry<String, Object> entry : old.entrySet())
 			{
 				String group = entry.getKey();
 				if (entry.getValue() instanceof Document)
