@@ -34,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.cache.definitions.ItemDefinition;
@@ -164,7 +165,8 @@ public class ItemService
 		DateTimeFormatter pattern = new DateTimeFormatterBuilder()
 			.appendPattern("dd-MMM-yyyy HH:mm")
 			.toFormatter()
-			.withZone(ZoneId.of("GMT"));
+			.withZone(ZoneId.of("GMT"))
+			.withLocale(Locale.US);
 		return pattern.parse(date, Instant::from);
 	}
 
