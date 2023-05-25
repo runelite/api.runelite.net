@@ -27,8 +27,6 @@ package net.runelite.http.service.ge;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.runelite.http.api.RuneLiteAPI;
@@ -37,12 +35,9 @@ import net.runelite.http.service.account.AuthFilter;
 import net.runelite.http.service.account.beans.SessionEntry;
 import net.runelite.http.service.util.redis.RedisPool;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import redis.clients.jedis.Jedis;
 
@@ -52,14 +47,12 @@ public class GrandExchangeController
 {
 	private static final Gson GSON = RuneLiteAPI.GSON;
 
-	private final GrandExchangeService grandExchangeService;
 	private final AuthFilter authFilter;
 	private final RedisPool redisPool;
 
 	@Autowired
-	public GrandExchangeController(GrandExchangeService grandExchangeService, AuthFilter authFilter, RedisPool redisPool)
+	public GrandExchangeController(AuthFilter authFilter, RedisPool redisPool)
 	{
-		this.grandExchangeService = grandExchangeService;
 		this.authFilter = authFilter;
 		this.redisPool = redisPool;
 	}
@@ -78,14 +71,6 @@ public class GrandExchangeController
 			}
 		}
 		Integer userId = session == null ? null : session.getUser();
-
-		// We don't keep track of pending trades in the web UI, so only add cancelled or completed trades
-		if (userId != null &&
-			grandExchangeTrade.getQty() > 0 &&
-			(grandExchangeTrade.isCancel() || grandExchangeTrade.getQty() == grandExchangeTrade.getTotal()))
-		{
-			grandExchangeService.add(userId, grandExchangeTrade);
-		}
 
 		Trade trade = new Trade();
 		trade.setBuy(grandExchangeTrade.isBuy());
@@ -113,46 +98,5 @@ public class GrandExchangeController
 		{
 			jedis.publish("ge", json);
 		}
-	}
-
-	@GetMapping
-	public Collection<GrandExchangeTradeHistory> get(HttpServletRequest request, HttpServletResponse response,
-		@RequestParam(required = false, defaultValue = "1024") int limit,
-		@RequestParam(required = false, defaultValue = "0") int offset) throws IOException
-	{
-		SessionEntry session = authFilter.handle(request, response);
-
-		if (session == null)
-		{
-			return null;
-		}
-
-		return grandExchangeService.get(session.getUser(), limit, offset).stream()
-			.map(GrandExchangeController::convert)
-			.collect(Collectors.toList());
-	}
-
-	private static GrandExchangeTradeHistory convert(TradeEntry tradeEntry)
-	{
-		GrandExchangeTradeHistory grandExchangeTrade = new GrandExchangeTradeHistory();
-		grandExchangeTrade.setBuy(tradeEntry.getAction() == TradeAction.BUY);
-		grandExchangeTrade.setItemId(tradeEntry.getItem());
-		grandExchangeTrade.setQuantity(tradeEntry.getQuantity());
-		grandExchangeTrade.setPrice(tradeEntry.getPrice());
-		grandExchangeTrade.setTime(tradeEntry.getTime());
-		return grandExchangeTrade;
-	}
-
-	@DeleteMapping
-	public void delete(HttpServletRequest request, HttpServletResponse response) throws IOException
-	{
-		SessionEntry session = authFilter.handle(request, response);
-
-		if (session == null)
-		{
-			return;
-		}
-
-		grandExchangeService.delete(session.getUser());
 	}
 }
