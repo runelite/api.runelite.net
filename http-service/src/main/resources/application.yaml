@@ -45,11 +45,6 @@ runelite:
   version: @project.version@
   commit: @git.commit.id.abbrev@
   dirty: @git.dirty@
-  # Twitter client for feed
-  twitter:
-    consumerkey:
-    secretkey:
-    listid: 1185897074786742273
   loottracker:
     store: false
     history: 90 # days
@@ -59,11 +54,7 @@ runelite:
     fswUrl: https://prices.runescape.wiki/api/v1/fsw/latest
   price:
     cache: 30 # minutes
-  feed:
-    rssUrl: https://runelite.net/atom.xml
   worlds:
     url: http://www.runescape.com/g=oldscape/slr.ws?order=LPWM
-  osrsnews:
-    rssUrl: https://services.runescape.com/m=news/latest_news.rss?oldschool=true
   item:
     digestUrl: https://secure.runescape.com/m=itemdb_oldschool/digest.csv
