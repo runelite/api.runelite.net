@@ -45,9 +45,6 @@ runelite:
   version: @project.version@
   commit: @git.commit.id.abbrev@
   dirty: @git.dirty@
-  loottracker:
-    store: false
-    history: 90 # days
   wiki:
     poll.ms: 300000 # 5 minutes
     url: https://prices.runescape.wiki/api/v1/osrs/latest
