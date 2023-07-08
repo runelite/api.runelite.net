@@ -87,7 +87,6 @@ public class ItemController
 				itemPrice.setName(priceEntry.getName());
 				itemPrice.setPrice(priceEntry.getPrice());
 				itemPrice.setWikiPrice(computeWikiPrice(priceEntry.getLow(), priceEntry.getHigh()));
-				itemPrice.setWikiPriceFsw(computeWikiPrice(priceEntry.getFsw_low(), priceEntry.getFsw_high()));
 				return itemPrice;
 			})
 			.toArray(ItemPrice[]::new));

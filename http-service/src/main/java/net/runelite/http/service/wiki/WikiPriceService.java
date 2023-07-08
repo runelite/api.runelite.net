@@ -61,20 +61,17 @@ public class WikiPriceService
 	private final Sql2o sql2o;
 	private final OkHttpClient okHttpClient;
 	private final HttpUrl wikiUrl;
-	private final HttpUrl fswUrl;
 
 	@Autowired
 	public WikiPriceService(
 		@Qualifier("Runelite SQL2O") Sql2o sql2o,
 		OkHttpClient okHttpClient,
-		@Value("${runelite.wiki.url}") String url,
-		@Value("${runelite.wiki.fswUrl}") String fswUrl
+		@Value("${runelite.wiki.url}") String url
 	)
 	{
 		this.sql2o = sql2o;
 		this.okHttpClient = okHttpClient;
 		this.wikiUrl = HttpUrl.get(url);
-		this.fswUrl = HttpUrl.get(fswUrl);
 
 		try (Connection con = sql2o.open())
 		{
@@ -93,16 +90,6 @@ public class WikiPriceService
 		catch (IOException e)
 		{
 			log.warn("Error while updating wiki prices", e);
-		}
-
-		try
-		{
-			PriceResult summary = getPrices(fswUrl);
-			insertPrices("FSW", summary);
-		}
-		catch (IOException e)
-		{
-			log.warn("Error while updating wiki fsw prices", e);
 		}
 	}
 

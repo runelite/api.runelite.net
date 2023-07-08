@@ -106,13 +106,14 @@ public class ItemService
 	{
 		try (Connection con = sql2o.beginTransaction())
 		{
-			Query query = con.createQuery("select t2.item, t3.name, t2.time, prices.price, prices.fetched_time, " +
-				" wprices_osrs.high, wprices_osrs.low, wprices_fsw.high as fsw_high, wprices_fsw.low as fsw_low " +
-				"  from (select t1.item as item, max(t1.time) as time from prices t1 group by item) t2" +
-				"  join prices on t2.item=prices.item and t2.time=prices.time" +
-				"  join items t3 on t2.item=t3.id" +
-				"  left join wiki_prices2 wprices_osrs on t2.item=wprices_osrs.item_id and wprices_osrs.gamemode = 'OSRS'" +
-				"  left join wiki_prices2 wprices_fsw on t2.item=wprices_fsw.item_id and wprices_fsw.gamemode = 'FSW'"
+			Query query = con.createQuery(
+				"SELECT item_max_times.item, items.name, item_max_times.time," +
+					"  prices.price, prices.fetched_time," +
+					"  wprices_osrs.high, wprices_osrs.low" +
+					"  FROM (SELECT item, max(time) as time FROM prices GROUP BY item) item_max_times" +
+					"  JOIN prices ON item_max_times.item=prices.item AND item_max_times.time=prices.time" +
+					"  JOIN items ON item_max_times.item=items.id" +
+					"  LEFT JOIN wiki_prices2 wprices_osrs ON item_max_times.item=wprices_osrs.item_id AND wprices_osrs.gamemode = 'OSRS'"
 			);
 			return query.executeAndFetch(PriceEntry.class);
 		}

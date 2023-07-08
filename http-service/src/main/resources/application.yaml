@@ -48,7 +48,6 @@ runelite:
   wiki:
     poll.ms: 300000 # 5 minutes
     url: https://prices.runescape.wiki/api/v1/osrs/latest
-    fswUrl: https://prices.runescape.wiki/api/v1/fsw/latest
   price:
     cache: 30 # minutes
   worlds:
