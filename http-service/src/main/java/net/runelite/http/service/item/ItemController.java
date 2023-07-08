@@ -97,7 +97,7 @@ public class ItemController
 	{
 		if (low > 0 && high > 0)
 		{
-			return (low + high) / 2;
+			return (int) (((long) low + high) / 2);
 		}
 		else
 		{
