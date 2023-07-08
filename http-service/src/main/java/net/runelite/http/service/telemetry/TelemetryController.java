@@ -30,11 +30,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.http.api.telemetry.Telemetry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/telemetry")
@@ -88,8 +90,18 @@ public class TelemetryController
 	}
 
 	@PostMapping("/error")
-	public void error(@RequestParam String type, @RequestParam String error)
+	public void error(
+		@RequestParam String type,
+		@RequestParam(required = false) String errorParam,
+		@RequestBody(required = false) String errorBody
+	)
 	{
+		String error = errorBody != null ? errorBody : errorParam;
+		if (error == null)
+		{
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "must include error");
+		}
+
 		log.info("Client error: {} - {}", type, error);
 
 		meterRegistry.counter("runelite client error",
