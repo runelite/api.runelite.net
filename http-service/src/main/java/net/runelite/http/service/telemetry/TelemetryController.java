@@ -92,7 +92,7 @@ public class TelemetryController
 	@PostMapping("/error")
 	public void error(
 		@RequestParam String type,
-		@RequestParam(required = false) String errorParam,
+		@RequestParam(required = false, name = "error") String errorParam,
 		@RequestBody(required = false) String errorBody
 	)
 	{
