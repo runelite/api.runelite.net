@@ -24,100 +24,52 @@
  */
 package net.runelite.http.service.cache;
 
-import java.util.List;
-import net.runelite.cache.IndexType;
+import lombok.RequiredArgsConstructor;
 import net.runelite.http.service.cache.beans.ArchiveEntry;
 import net.runelite.http.service.cache.beans.CacheEntry;
-import net.runelite.http.service.cache.beans.FileEntry;
-import net.runelite.http.service.cache.beans.IndexEntry;
 import org.sql2o.Connection;
-import org.sql2o.Query;
-import org.sql2o.ResultSetIterable;
 
+@RequiredArgsConstructor
 class CacheDAO
 {
-	public List<CacheEntry> listCaches(Connection con)
-	{
-		return con.createQuery("select id, revision, date from cache")
-			.executeAndFetch(CacheEntry.class);
-	}
+	private final Connection conn;
 
-	public CacheEntry findMostRecent(Connection con)
+	CacheEntry findMostRecent()
 	{
-		return con.createQuery("select id, revision, date from cache order by revision desc, date desc limit 1")
+		return conn.createQuery("select id, revision, date from cache order by revision desc, date desc limit 1")
 			.executeAndFetchFirst(CacheEntry.class);
 	}
 
-	public List<IndexEntry> findIndexesForCache(Connection con, CacheEntry cache)
+	ArchiveEntry findArchive(CacheEntry cacheEntry, int index, int archive)
 	{
-		return con.createQuery("select id, indexId, crc, revision from `index` where cache = :cache")
-			.addParameter("cache", cache.getId())
-			.executeAndFetch(IndexEntry.class);
-	}
-
-	public IndexEntry findIndexForCache(Connection con, CacheEntry cache, int indexId)
-	{
-		return con.createQuery("select id, indexId, crc, revision from `index` "
-			+ "where cache = :id "
-			+ "and indexId = :indexId")
-			.addParameter("id", cache.getId())
-			.addParameter("indexId", indexId)
-			.executeAndFetchFirst(IndexEntry.class);
-	}
-
-	public ResultSetIterable<ArchiveEntry> findArchivesForIndex(Connection con, IndexEntry indexEntry)
-	{
-		return con.createQuery("select archive.id, archive.archiveId, archive.nameHash,"
-			+ " archive.crc, archive.revision, archive.hash from index_archive "
-			+ "join archive on index_archive.archive = archive.id "
-			+ "where index_archive.index = :id")
-			.addParameter("id", indexEntry.getId())
-			.executeAndFetchLazy(ArchiveEntry.class);
-	}
-
-	public ArchiveEntry findArchiveForIndex(Connection con, IndexEntry indexEntry, int archiveId)
-	{
-		return con.createQuery("select archive.id, archive.archiveId, archive.nameHash,"
-			+ " archive.crc, archive.revision, archive.hash from index_archive "
-			+ "join archive on index_archive.archive = archive.id "
-			+ "where index_archive.index = :id "
-			+ "and archive.archiveId = :archiveId")
-			.addParameter("id", indexEntry.getId())
-			.addParameter("archiveId", archiveId)
+		return conn.createQuery("select a.id, a.index, a.archive, a.crc, a.name, a.revision, a.data_id from cache_archive ca " +
+			"join archive a on ca.archive_id = a.id where ca.cache_id = :cache_id and a.index = :index_id and a.archive=:archive_id")
+			.addParameter("cache_id", cacheEntry.getId())
+			.addParameter("index_id", index)
+			.addParameter("archive_id", archive)
+			.addColumnMapping("index", "indexId")
+			.addColumnMapping("archive", "archiveId")
+			.addColumnMapping("data_id", "dataId")
 			.executeAndFetchFirst(ArchiveEntry.class);
 	}
 
-	public ArchiveEntry findArchiveByName(Connection con, CacheEntry cache, IndexType index, int nameHash)
+	byte[] getArchiveData(ArchiveEntry archiveEntry)
 	{
-		return con.createQuery("select archive.id, archive.archiveId, archive.nameHash,"
-			+ " archive.crc, archive.revision, archive.hash from archive "
-			+ "join index_archive on index_archive.archive = archive.id "
-			+ "join `index` on index.id = index_archive.index "
-			+ "where index.cache = :cacheId "
-			+ "and index.indexId = :indexId "
-			+ "and archive.nameHash = :nameHash "
-			+ "limit 1")
-			.addParameter("cacheId", cache.getId())
-			.addParameter("indexId", index.getNumber())
-			.addParameter("nameHash", nameHash)
+		return conn.createQuery("select data from data where id = :data_id")
+			.addParameter("data_id", archiveEntry.getDataId())
+			.executeAndFetchFirst(byte[].class);
+	}
+
+	ArchiveEntry findArchiveByName(CacheEntry cache, int index, int name)
+	{
+		return conn.createQuery("select a.id, a.index, a.archive, a.crc, a.name, a.revision, a.data_id from cache_archive ca " +
+			"join archive a on ca.archive_id = a.id where ca.cache_id = :cache_id and a.index = :index_id and a.name = :name")
+			.addParameter("cache_id", cache.getId())
+			.addParameter("index_id", index)
+			.addParameter("name", name)
+			.addColumnMapping("index", "indexId")
+			.addColumnMapping("archive", "archiveId")
+			.addColumnMapping("data_id", "dataId")
 			.executeAndFetchFirst(ArchiveEntry.class);
-	}
-
-	public ResultSetIterable<FileEntry> findFilesForArchive(Connection con, ArchiveEntry archiveEntry)
-	{
-		Query findFilesForArchive = con.createQuery("select id, fileId, nameHash from file "
-			+ "where archive = :archive");
-
-		return findFilesForArchive
-			.addParameter("archive", archiveEntry.getId())
-			.executeAndFetchLazy(FileEntry.class);
-	}
-
-	public CacheEntry findCache(Connection con, int cacheId)
-	{
-		return con.createQuery("select id, revision, date from cache "
-			+ "where id = :cacheId")
-			.addParameter("cacheId", cacheId)
-			.executeAndFetchFirst(CacheEntry.class);
 	}
 }

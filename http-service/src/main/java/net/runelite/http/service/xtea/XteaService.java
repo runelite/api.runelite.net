@@ -226,7 +226,7 @@ public class XteaService
 			.toString();
 		int archiveNameHash = Djb2.hash(archiveName);
 
-		return cacheService.findArchiveForTypeAndName(cache, IndexType.MAPS, archiveNameHash);
+		return cacheService.findArchiveForTypeAndName(cache, IndexType.MAPS.getNumber(), archiveNameHash);
 	}
 
 	private boolean checkKeys(ArchiveEntry archiveEntry, int[] keys)

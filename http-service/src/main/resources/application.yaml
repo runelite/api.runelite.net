@@ -25,13 +25,6 @@ oauth:
   callback: https://api.runelite.net/oauth/
   callback-snapshot: https://api.runelite.net/oauth-snapshot/
 
-# Minio client storage for cache
-minio:
-  endpoint: http://localhost:9000
-  accesskey: AM54M27O4WZK65N6F8IP
-  secretkey: /PZCxzmsJzwCHYlogcymuprniGCaaLUOET2n6yMP
-  bucket: runelite
-
 # Redis client
 redis:
   pool.size: 10

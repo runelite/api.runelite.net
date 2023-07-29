@@ -30,9 +30,10 @@ import lombok.Data;
 public class ArchiveEntry
 {
 	private int id;
+	private int indexId;
 	private int archiveId;
-	private int nameHash;
 	private int crc;
+	private int name;
 	private int revision;
-	private byte[] hash;
+	private int dataId;
 }

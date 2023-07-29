@@ -24,23 +24,9 @@
  */
 package net.runelite.http.service.cache;
 
-import com.google.common.collect.Iterables;
-import com.google.common.io.BaseEncoding;
-import com.google.common.io.ByteStreams;
-import io.minio.MinioClient;
-import io.minio.errors.ErrorResponseException;
-import io.minio.errors.InsufficientDataException;
-import io.minio.errors.InternalException;
-import io.minio.errors.InvalidArgumentException;
-import io.minio.errors.InvalidBucketNameException;
-import io.minio.errors.InvalidEndpointException;
-import io.minio.errors.InvalidPortException;
-import io.minio.errors.NoResponseException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -51,19 +37,16 @@ import net.runelite.cache.definitions.loaders.ItemLoader;
 import net.runelite.cache.fs.ArchiveFiles;
 import net.runelite.cache.fs.Container;
 import net.runelite.cache.fs.FSFile;
+import net.runelite.cache.index.ArchiveData;
+import net.runelite.cache.index.FileData;
+import net.runelite.cache.index.IndexData;
 import net.runelite.http.service.cache.beans.ArchiveEntry;
 import net.runelite.http.service.cache.beans.CacheEntry;
-import net.runelite.http.service.cache.beans.FileEntry;
-import net.runelite.http.service.cache.beans.IndexEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.sql2o.Connection;
-import org.sql2o.ResultSetIterable;
 import org.sql2o.Sql2o;
-import org.xmlpull.v1.XmlPullParserException;
 
 @Service
 @Slf4j
@@ -73,27 +56,6 @@ public class CacheService
 	@Qualifier("Runelite Cache SQL2O")
 	private Sql2o sql2o;
 
-	@Value("${minio.bucket}")
-	private String minioBucket;
-
-	private final MinioClient minioClient;
-
-	@Autowired
-	public CacheService(
-		@Value("${minio.endpoint}") String minioEndpoint,
-		@Value("${minio.accesskey}") String accessKey,
-		@Value("${minio.secretkey}") String secretKey
-	) throws InvalidEndpointException, InvalidPortException
-	{
-		this.minioClient = new MinioClient(minioEndpoint, accessKey, secretKey);
-	}
-
-	@Bean
-	public MinioClient minioClient()
-	{
-		return minioClient;
-	}
-
 	/**
 	 * retrieve archive from storage
 	 *
@@ -102,75 +64,10 @@ public class CacheService
 	 */
 	public byte[] getArchive(ArchiveEntry archiveEntry)
 	{
-		String hashStr = BaseEncoding.base16().encode(archiveEntry.getHash());
-		String path = new StringBuilder()
-			.append(hashStr, 0, 2)
-			.append('/')
-			.append(hashStr.substring(2))
-			.toString();
-
-		try (InputStream in = minioClient.getObject(minioBucket, path))
-		{
-			return ByteStreams.toByteArray(in);
-		}
-		catch (InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException
-			| IOException | InvalidKeyException | NoResponseException | XmlPullParserException
-			| ErrorResponseException | InternalException | InvalidArgumentException ex)
-		{
-			log.warn(null, ex);
-			return null;
-		}
-	}
-
-	public ArchiveFiles getArchiveFiles(ArchiveEntry archiveEntry) throws IOException
-	{
-		CacheDAO cacheDao = new CacheDAO();
-
-		try (Connection con = sql2o.open();
-			ResultSetIterable<FileEntry> files = cacheDao.findFilesForArchive(con, archiveEntry))
-		{
-			byte[] archiveData = getArchive(archiveEntry);
-
-			if (archiveData == null)
-			{
-				return null;
-			}
-
-			Container result = Container.decompress(archiveData, null);
-			if (result == null)
-			{
-				return null;
-			}
-
-			byte[] decompressedData = result.data;
-
-			ArchiveFiles archiveFiles = new ArchiveFiles();
-			for (FileEntry fileEntry : files)
-			{
-				FSFile file = new FSFile(fileEntry.getFileId());
-				archiveFiles.addFile(file);
-				file.setNameHash(fileEntry.getNameHash());
-			}
-			archiveFiles.loadContents(decompressedData);
-			return archiveFiles;
-		}
-	}
-
-	public List<CacheEntry> listCaches()
-	{
 		try (Connection con = sql2o.open())
 		{
-			CacheDAO cacheDao = new CacheDAO();
-			return cacheDao.listCaches(con);
-		}
-	}
-
-	public CacheEntry findCache(int cacheId)
-	{
-		try (Connection con = sql2o.open())
-		{
-			CacheDAO cacheDao = new CacheDAO();
-			return cacheDao.findCache(con, cacheId);
+			CacheDAO cacheDao = new CacheDAO(con);
+			return cacheDao.getArchiveData(archiveEntry);
 		}
 	}
 
@@ -178,73 +75,74 @@ public class CacheService
 	{
 		try (Connection con = sql2o.open())
 		{
-			CacheDAO cacheDao = new CacheDAO();
-			return cacheDao.findMostRecent(con);
+			CacheDAO cacheDao = new CacheDAO(con);
+			return cacheDao.findMostRecent();
 		}
 	}
 
-	public List<IndexEntry> findIndexesForCache(CacheEntry cacheEntry)
+	public ArchiveEntry findArchiveForTypeAndName(CacheEntry cache, int index, int nameHash)
 	{
 		try (Connection con = sql2o.open())
 		{
-			CacheDAO cacheDao = new CacheDAO();
-			return cacheDao.findIndexesForCache(con, cacheEntry);
+			CacheDAO cacheDao = new CacheDAO(con);
+			return cacheDao.findArchiveByName(cache, index, nameHash);
 		}
 	}
 
-	public IndexEntry findIndexForCache(CacheEntry cahceEntry, int indexId)
+	private ArchiveFiles loadArchiveFiles(int indexId, int archiveId) throws IOException
 	{
 		try (Connection con = sql2o.open())
 		{
-			CacheDAO cacheDao = new CacheDAO();
-			return cacheDao.findIndexForCache(con, cahceEntry, indexId);
-		}
-	}
+			CacheDAO cacheDao = new CacheDAO(con);
+			CacheEntry cache = cacheDao.findMostRecent();
+			if (cache == null)
+			{
+				return null;
+			}
 
-	public List<ArchiveEntry> findArchivesForIndex(IndexEntry indexEntry)
-	{
-		try (Connection con = sql2o.open())
-		{
-			CacheDAO cacheDao = new CacheDAO();
-			ResultSetIterable<ArchiveEntry> archiveEntries = cacheDao.findArchivesForIndex(con, indexEntry);
-			List<ArchiveEntry> archives = new ArrayList<>();
-			Iterables.addAll(archives, archiveEntries);
-			return archives;
-		}
-	}
+			// file data required to parse the archive is in the index header, so read that first
+			ArchiveFiles archiveFiles;
+			{
+				ArchiveEntry idx = cacheDao.findArchive(cache, 255, indexId);
+				byte[] data = cacheDao.getArchiveData(idx);
+				Container container = Container.decompress(data, null);
+				IndexData indexData = new IndexData();
+				indexData.load(container.data);
+				ArchiveData itemArchive = Arrays.stream(indexData.getArchives())
+					.filter(a -> a.getId() == archiveId)
+					.findFirst()
+					.get();
+				FileData[] files = itemArchive.getFiles();
 
-	public ArchiveEntry findArchiveForIndex(IndexEntry indexEntry, int archiveId)
-	{
-		try (Connection con = sql2o.open())
-		{
-			CacheDAO cacheDao = new CacheDAO();
-			return cacheDao.findArchiveForIndex(con, indexEntry, archiveId);
-		}
-	}
+				archiveFiles = new ArchiveFiles();
+				for (FileData fileData : files)
+				{
+					FSFile file = new FSFile(fileData.getId());
+					file.setNameHash(fileData.getNameHash());
+					archiveFiles.addFile(file);
+				}
+			}
 
-	public ArchiveEntry findArchiveForTypeAndName(CacheEntry cache, IndexType index, int nameHash)
-	{
-		try (Connection con = sql2o.open())
-		{
-			CacheDAO cacheDao = new CacheDAO();
-			return cacheDao.findArchiveByName(con, cache, index, nameHash);
+			// now read the archive and unpack the files
+			ArchiveEntry archive = cacheDao.findArchive(cache, indexId, archiveId);
+			byte[] data = cacheDao.getArchiveData(archive);
+			Container container = Container.decompress(data, null);
+			archiveFiles.loadContents(container.data);
+			return archiveFiles;
 		}
 	}
 
 	public List<ItemDefinition> getItems() throws IOException
 	{
-		CacheEntry cache = findMostRecent();
-		if (cache == null)
+		ArchiveFiles files = loadArchiveFiles(IndexType.CONFIGS.getNumber(), ConfigType.ITEM.getId());
+		if (files == null)
 		{
 			return Collections.emptyList();
 		}
 
-		IndexEntry indexEntry = findIndexForCache(cache, IndexType.CONFIGS.getNumber());
-		ArchiveEntry archiveEntry = findArchiveForIndex(indexEntry, ConfigType.ITEM.getId());
-		ArchiveFiles archiveFiles = getArchiveFiles(archiveEntry);
 		final ItemLoader itemLoader = new ItemLoader();
-		final List<ItemDefinition> result = new ArrayList<>(archiveFiles.getFiles().size());
-		for (FSFile file : archiveFiles.getFiles())
+		final List<ItemDefinition> result = new ArrayList<>(files.getFiles().size());
+		for (FSFile file : files.getFiles())
 		{
 			ItemDefinition itemDef = itemLoader.load(file.getFileId(), file.getContents());
 			result.add(itemDef);
