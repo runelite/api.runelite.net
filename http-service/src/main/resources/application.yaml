@@ -2,7 +2,7 @@ datasource:
   runelite:
     jndiName: java:comp/env/jdbc/runelite
   runelite-cache:
-    jndiName: java:comp/env/jdbc/runelite-cache2
+    jndiName: java:comp/env/jdbc/runelite-cache3
 
 # By default Spring tries to register the datasource as an MXBean,
 # so if multiple apis are deployed on one web container with
