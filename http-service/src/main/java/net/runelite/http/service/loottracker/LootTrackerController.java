@@ -25,11 +25,8 @@
  */
 package net.runelite.http.service.loottracker;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
 import java.util.Collection;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import net.runelite.http.api.RuneLiteAPI;
 import net.runelite.http.api.loottracker.LootRecord;
 import net.runelite.http.service.util.redis.RedisPool;
@@ -50,10 +47,8 @@ public class LootTrackerController
 	private RedisPool redisPool;
 
 	@RequestMapping(method = RequestMethod.POST)
-	public void storeLootRecord(HttpServletRequest request, HttpServletResponse response, @RequestBody Collection<LootRecord> records)
+	public void storeLootRecord(@RequestBody Collection<LootRecord> records)
 	{
-		response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
-
 		try (Jedis jedis = redisPool.getResource())
 		{
 			jedis.publish("drops", GSON.toJson(records));
