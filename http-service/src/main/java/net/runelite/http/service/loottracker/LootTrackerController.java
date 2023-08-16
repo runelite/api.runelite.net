@@ -26,11 +26,14 @@
 package net.runelite.http.service.loottracker;
 
 import com.google.gson.Gson;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Collection;
 import net.runelite.http.api.RuneLiteAPI;
 import net.runelite.http.api.loottracker.LootRecord;
+import net.runelite.http.api.loottracker.LootRecordType;
 import net.runelite.http.service.util.redis.RedisPool;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -46,12 +49,32 @@ public class LootTrackerController
 	@Autowired
 	private RedisPool redisPool;
 
+	@Autowired
+	private MeterRegistry meterRegistry;
+
+	@Value("${runelite.loottracker.metrics}")
+	private boolean enableMetrics;
+
 	@RequestMapping(method = RequestMethod.POST)
 	public void storeLootRecord(@RequestBody Collection<LootRecord> records)
 	{
 		try (Jedis jedis = redisPool.getResource())
 		{
 			jedis.publish("drops", GSON.toJson(records));
+		}
+
+		if (enableMetrics)
+		{
+			for (LootRecord record : records)
+			{
+				if (record.getType() == LootRecordType.EVENT || record.getType() == LootRecordType.NPC)
+				{
+					meterRegistry.counter("runelite loottracker",
+						"type", record.getType().name(),
+						"name", record.getEventId())
+						.increment();
+				}
+			}
 		}
 	}
 }

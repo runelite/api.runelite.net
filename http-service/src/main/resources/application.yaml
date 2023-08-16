@@ -47,3 +47,5 @@ runelite:
     url: http://www.runescape.com/g=oldscape/slr.ws?order=LPWM
   item:
     digestUrl: https://secure.runescape.com/m=itemdb_oldschool/digest.csv
+  loottracker:
+    metrics: false
