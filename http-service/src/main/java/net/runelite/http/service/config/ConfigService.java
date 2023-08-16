@@ -339,19 +339,25 @@ public class ConfigService
 			}
 		}
 
-		Long rev = null;
-		if (sets.size() > 0)
+		if (patch.getProfileName() != null)
 		{
-			sets.add(INCREMENT_REV);
-			Document newRev = mongoCollection.findOneAndUpdate(
-				profileFilter(userId, profileId),
-				combine(sets),
-				upsertFindAndUpdateOptions
-			);
-			if (newRev != null)
-			{
-				rev = ((Document) newRev.get("_profile")).getLong("rev");
-			}
+			sets.add(set("_profile.name", patch.getProfileName()));
+		}
+
+		// always write the profile, even if empty.
+		// this is so creating a new profile with no keys yet and setting sync on causes the service to
+		// create the profile. If it is not created the client considers it lost and
+		// marks it as unsynced when the client restarts next.
+		Long rev = null;
+		sets.add(INCREMENT_REV);
+		Document newRev = mongoCollection.findOneAndUpdate(
+			profileFilter(userId, profileId),
+			combine(sets),
+			upsertFindAndUpdateOptions
+		);
+		if (newRev != null)
+		{
+			rev = ((Document) newRev.get("_profile")).getLong("rev");
 		}
 
 		return new ConfigPatchResult(rev, failures);

@@ -33,6 +33,7 @@ import lombok.Data;
 @Data
 public class ConfigPatch
 {
+	String profileName;
 	Map<String, String> edit = new HashMap<>();
 	Set<String> unset = new HashSet<>();
 }
