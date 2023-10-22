@@ -50,10 +50,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
 import org.sql2o.Sql2oException;
@@ -97,6 +99,7 @@ public class AccountService
 	private final String oauthClientSecret;
 	private final String oauthCallback;
 	private final AuthFilter auth;
+	private final String redirHost;
 
 	@Autowired
 	public AccountService(
@@ -106,13 +109,15 @@ public class AccountService
 		@Value("${oauth.callback}") String oauthCallback,
 		@Value("${oauth.callback-snapshot}") String oauthSnapshotCallback,
 		@Value("#{servletContext.contextPath}") String contextPath,
-		AuthFilter auth
+		AuthFilter auth,
+		@Value("${oauth.redir-host}") String redirHost
 	)
 	{
 		this.sql2o = sql2o;
 		this.oauthClientId = oauthClientId;
 		this.oauthClientSecret = oauthClientSecret;
 		this.auth = auth;
+		this.redirHost = redirHost;
 
 		this.oauthCallback = contextPath.toLowerCase().contains("snapshot") ? oauthSnapshotCallback : oauthCallback;
 
@@ -243,6 +248,12 @@ public class AccountService
 				.addQueryParameter("username", userInfo.getEmail())
 				.addQueryParameter("sessionId", uuid.toString())
 				.build();
+
+			if (!redir.host().equals(redirHost))
+			{
+				logger.error("oauth state redirect to bad url/host {}/{}", state.getRedirectUrl(), redir.host());
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+			}
 		}
 		else
 		{

@@ -24,6 +24,7 @@ oauth:
   client-secret:
   callback: https://api.runelite.net/oauth/
   callback-snapshot: https://api.runelite.net/oauth-snapshot/
+  redir-host: runelite.net
 
 # Redis client
 redis:
