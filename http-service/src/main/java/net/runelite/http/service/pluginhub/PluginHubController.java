@@ -46,6 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -84,6 +85,52 @@ public class PluginHubController
 		return ResponseEntity.ok()
 			.cacheControl(CacheControl.maxAge(30, TimeUnit.MINUTES).cachePublic())
 			.body(pluginCounts);
+	}
+
+	@GetMapping("/shields/installs/plugin/{pluginName}")
+	public ResponseEntity<ShieldsFormat> installs(@PathVariable String pluginName)
+	{
+		if (pluginCounts.isEmpty())
+		{
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.cacheControl(CacheControl.noCache())
+				.build();
+		}
+
+		long count = pluginCounts.getOrDefault(pluginName, -1L);
+		return ResponseEntity.ok()
+			.cacheControl(CacheControl.maxAge(30, TimeUnit.MINUTES).cachePublic())
+			.body(new ShieldsFormat(count, "Total installs"));
+	}
+
+	@GetMapping("/shields/rank/plugin/{pluginName}")
+	public ResponseEntity<ShieldsFormat> rank(@PathVariable String pluginName)
+	{
+		if (pluginCounts.isEmpty())
+		{
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.cacheControl(CacheControl.noCache())
+				.build();
+		}
+
+
+		long rank = -1;
+		long installs = pluginCounts.getOrDefault(pluginName, -1L);
+		if (installs != -1L)
+		{
+			rank = 1;
+			for (Map.Entry<String, Long> entry : pluginCounts.entrySet())
+			{
+				if (entry.getValue() > installs)
+				{
+					rank++;
+				}
+			}
+		}
+
+		return ResponseEntity.ok()
+			.cacheControl(CacheControl.maxAge(30, TimeUnit.MINUTES).cachePublic())
+			.body(new ShieldsFormat(rank, "Plugin rank"));
 	}
 
 	@PostMapping
