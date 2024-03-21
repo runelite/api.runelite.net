@@ -28,6 +28,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.cache.IndexType;
 import net.runelite.cache.fs.Container;
@@ -67,6 +68,7 @@ public class XteaService
 
 	private final Cache<Integer, XteaCache> keyCache = CacheBuilder.newBuilder()
 		.maximumSize(1024)
+		.expireAfterWrite(30, TimeUnit.MINUTES)
 		.build();
 
 	@Autowired
