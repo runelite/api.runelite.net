@@ -72,7 +72,7 @@ public class LootTrackerController
 					meterRegistry.counter("runelite loottracker",
 						"type", record.getType().name(),
 						"name", record.getEventId())
-						.increment();
+						.increment(record.getAmount());
 				}
 			}
 		}
