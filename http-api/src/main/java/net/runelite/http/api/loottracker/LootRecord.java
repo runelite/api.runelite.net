@@ -42,9 +42,5 @@ public class LootRecord
 	private Instant time;
 	private Integer world;
 	private int amount = 1;
-
-	public LootRecord(String eventId, LootRecordType type, Object metadata, Collection<GameItem> drops, Instant time, Integer world)
-	{
-		this(eventId, type, metadata, drops, time, world, 1);
-	}
+	private String source;
 }
