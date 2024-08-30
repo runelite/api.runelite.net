@@ -70,6 +70,7 @@ public class ItemStats
 				.rstr(equipment.getRstr() - other.equipment.getRstr())
 				.mdmg(equipment.getMdmg() - other.equipment.getMdmg())
 				.prayer(equipment.getPrayer() - other.equipment.getPrayer())
+				.attackRange(equipment.getAttackRange() - other.equipment.getAttackRange())
 				.aspeed(equipment.getAspeed() - other.equipment.getAspeed())
 				.build();
 		}

@@ -54,4 +54,6 @@ public class ItemEquipmentStats
 	private int mdmg;
 	private int prayer;
 	private int aspeed;
+	@SerializedName("attackrange")
+	private int attackRange;
 }
