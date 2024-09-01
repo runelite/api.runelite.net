@@ -51,7 +51,7 @@ public class ItemEquipmentStats
 
 	private int str;
 	private int rstr;
-	private int mdmg;
+	private float mdmg;
 	private int prayer;
 	private int aspeed;
 }
