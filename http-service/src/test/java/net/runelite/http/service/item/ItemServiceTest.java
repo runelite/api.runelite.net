@@ -25,8 +25,8 @@
 package net.runelite.http.service.item;
 
 import java.time.Instant;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ItemServiceTest
 {
@@ -34,6 +34,6 @@ public class ItemServiceTest
 	public void testParseHeaderDate()
 	{
 		Instant instant = ItemService.parseHeaderDate("ID,Current Cost (as of 02-Nov-2022 10:52)");
-		assertEquals(Instant.parse("2022-11-02T10:52:00Z"), instant);
+		Assertions.assertEquals(Instant.parse("2022-11-02T10:52:00Z"), instant);
 	}
 }

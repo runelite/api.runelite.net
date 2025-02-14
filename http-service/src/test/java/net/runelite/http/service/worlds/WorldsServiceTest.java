@@ -36,19 +36,20 @@ import okio.Buffer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.sql2o.tools.IOUtils;
 
 public class WorldsServiceTest
 {
-	@Rule
-	public final MockWebServer server = new MockWebServer();
+	private MockWebServer server;
 
-	@Before
-	public void before() throws IOException
+	@BeforeEach
+	void before() throws IOException
 	{
+		server = new MockWebServer();
+
 		InputStream in = WorldsServiceTest.class.getResourceAsStream("worldlist");
 		byte[] worldData = IOUtils.toByteArray(in);
 
@@ -56,6 +57,12 @@ public class WorldsServiceTest
 		buffer.write(worldData);
 
 		server.enqueue(new MockResponse().setBody(buffer));
+	}
+
+	@AfterEach
+	void after() throws IOException
+	{
+		server.shutdown();
 	}
 
 	@Test
