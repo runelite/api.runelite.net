@@ -90,6 +90,7 @@ public class PluginHubController
 	@GetMapping("/shields/installs/plugin/{pluginName}")
 	public ResponseEntity<ShieldsFormat> installs(@PathVariable String pluginName)
 	{
+		pluginName = pluginName.toLowerCase();
 		if (pluginCounts.isEmpty())
 		{
 			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -106,6 +107,7 @@ public class PluginHubController
 	@GetMapping("/shields/rank/plugin/{pluginName}")
 	public ResponseEntity<ShieldsFormat> rank(@PathVariable String pluginName)
 	{
+		pluginName = pluginName.toLowerCase();
 		if (pluginCounts.isEmpty())
 		{
 			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
