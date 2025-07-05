@@ -36,4 +36,5 @@ public class Telemetry
 	String osArch;
 	String launcherVersion;
 	long totalMemory;
+	String cpuName;
 }

@@ -87,6 +87,12 @@ public class TelemetryController
 		{
 			memoryDistribution.record((double) (telemetry.getTotalMemory() / 1024L / 1024L));
 		}
+
+		if (telemetry.getCpuName() != null && !telemetry.getCpuName().isBlank())
+		{
+			meterRegistry.counter("runelite client cpu name", "name", telemetry.getCpuName())
+				.increment();
+		}
 	}
 
 	@PostMapping("/error")
