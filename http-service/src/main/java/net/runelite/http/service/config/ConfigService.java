@@ -26,6 +26,7 @@ package net.runelite.http.service.config;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -350,11 +351,20 @@ public class ConfigService
 		// marks it as unsynced when the client restarts next.
 		Long rev = null;
 		sets.add(INCREMENT_REV);
-		Document newRev = mongoCollection.findOneAndUpdate(
-			profileFilter(userId, profileId),
-			combine(sets),
-			upsertFindAndUpdateOptions
-		);
+		Document newRev;
+		try
+		{
+			newRev = mongoCollection.findOneAndUpdate(
+				profileFilter(userId, profileId),
+				combine(sets),
+				upsertFindAndUpdateOptions
+			);
+		}
+		catch (MongoCommandException ex)
+		{
+			log.error("error patching profile {} for user {} edits: {} unsets: {}", profileId, userId, patch.getEdit().size(), patch.getUnset().size());
+			throw ex;
+		}
 		if (newRev != null)
 		{
 			rev = ((Document) newRev.get("_profile")).getLong("rev");
