@@ -37,7 +37,9 @@ public enum WorldRegion
 	UNITED_STATES_OF_AMERICA("US", "USA"),
 	UNITED_KINGDOM("GB", "GBR"),
 	AUSTRALIA("AU", "AUS"),
-	GERMANY("DE", "DEU");
+	GERMANY("DE", "DEU"),
+	BRAZIL("BR", "BRA"),
+	;
 
 	/**
 	 * ISO-3166-1 alpha-2 country code
@@ -67,6 +69,8 @@ public enum WorldRegion
 				return AUSTRALIA;
 			case 7:
 				return GERMANY;
+			case 8:
+				return BRAZIL;
 			default:
 				return null;
 		}
