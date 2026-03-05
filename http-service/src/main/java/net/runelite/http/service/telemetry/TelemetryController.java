@@ -93,6 +93,10 @@ public class TelemetryController
 			meterRegistry.counter("runelite client cpu name", "name", telemetry.getCpuName())
 				.increment();
 		}
+
+		meterRegistry.counter("runelite client launch",
+				"isJxAccount", Boolean.toString(telemetry.isJxAccount()))
+			.increment();
 	}
 
 	@PostMapping("/error")

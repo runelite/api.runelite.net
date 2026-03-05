@@ -37,4 +37,5 @@ public class Telemetry
 	String launcherVersion;
 	long totalMemory;
 	String cpuName;
+	boolean isJxAccount;
 }
