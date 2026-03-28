@@ -26,6 +26,8 @@ package net.runelite.http.service.chat;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -250,9 +252,9 @@ public class ChatController
 	}
 
 	@PostMapping("/pets")
-	public void submitPetList(@RequestParam String name, @RequestBody int[] petList)
+	public void submitPetList(@RequestParam String name, @RequestBody Map<Integer, Integer> petList)
 	{
-		if (petList.length == 0 || petList.length > MAX_PETS)
+		if (petList.size() == 0 || petList.size() > MAX_PETS || Collections.max(petList.values()) > MAX_PETS)
 		{
 			return;
 		}
@@ -261,9 +263,9 @@ public class ChatController
 	}
 
 	@GetMapping("/pets")
-	public int[] getPetList(@RequestParam String name)
+	public Map<Integer, Integer> getPetList(@RequestParam String name)
 	{
-		int[] petList = chatService.getPetList(name);
+		Map<Integer, Integer> petList = chatService.getPetList(name);
 		if (petList == null)
 		{
 			throw new NotFoundException();

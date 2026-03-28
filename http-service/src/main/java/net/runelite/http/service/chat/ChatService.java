@@ -28,10 +28,10 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 import net.runelite.http.api.chat.Duels;
 import net.runelite.http.api.chat.LayoutRoom;
 import net.runelite.http.api.chat.Task;
@@ -232,12 +232,12 @@ public class ChatService
 		}
 	}
 
-	public int[] getPetList(String name)
+	public Map<Integer, Integer> getPetList(String name)
 	{
-		Set<String> pets;
+		Map<String, String> pets;
 		try (Jedis jedis = jedisPool.getResource())
 		{
-			pets = jedis.smembers("pets." + name);
+			pets = jedis.hgetAll("pets." + name);
 		}
 
 		if (pets.isEmpty())
@@ -245,18 +245,25 @@ public class ChatService
 			return null;
 		}
 
-		return pets.stream()
-			.mapToInt(Integer::parseInt)
-			.toArray();
+		return new HashMap<>(
+			pets.entrySet().stream().collect(
+				Collectors.toMap(
+					entry -> Integer.parseInt(entry.getKey()),
+					entry -> Integer.parseInt(entry.getValue()))
+			));
 	}
 
-	public void setPetList(String name, int[] petList)
+	public void setPetList(String name, Map<Integer, Integer> petList)
 	{
-		String[] pets = Arrays.stream(petList).mapToObj(Integer::toString).toArray(String[]::new);
+		Map<String, String> pets = petList.entrySet().stream().collect(
+			Collectors.toMap(
+				entry -> entry.getKey().toString(),
+				entry -> entry.getValue().toString()
+			));
 		String key = "pets." + name;
 		try (Jedis jedis = jedisPool.getResource())
 		{
-			jedis.sadd(key, pets);
+			jedis.hmset(key, pets);
 			jedis.expire(key, (int) EXPIRE.getSeconds());
 		}
 	}
