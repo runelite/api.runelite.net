@@ -39,6 +39,9 @@ public enum WorldRegion
 	AUSTRALIA("AU", "AUS"),
 	GERMANY("DE", "DEU"),
 	BRAZIL("BR", "BRA"),
+	JAPAN("JP", "JPN"),
+	SINGAPORE("SP", "SGP"),
+	SOUTH_AFRICA("ZA", "ZAF"),
 	;
 
 	/**
@@ -71,6 +74,12 @@ public enum WorldRegion
 				return GERMANY;
 			case 8:
 				return BRAZIL;
+			case 9:
+				return JAPAN;
+			case 10:
+				return SINGAPORE;
+			case 12:
+				return SOUTH_AFRICA;
 			default:
 				return null;
 		}
