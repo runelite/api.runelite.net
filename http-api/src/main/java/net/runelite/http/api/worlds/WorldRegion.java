@@ -40,7 +40,7 @@ public enum WorldRegion
 	GERMANY("DE", "DEU"),
 	BRAZIL("BR", "BRA"),
 	JAPAN("JP", "JPN"),
-	SINGAPORE("SP", "SGP"),
+	SINGAPORE("SG", "SGP"),
 	SOUTH_AFRICA("ZA", "ZAF"),
 	;
 
