@@ -85,7 +85,7 @@
 		<dependency>
 			<groupId>net.runelite</groupId>
 			<artifactId>cache</artifactId>
-			<version>1.10.51</version>
+			<version>1.12.32</version>
 		</dependency>
 
 		<dependency>

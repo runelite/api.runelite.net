@@ -198,7 +198,7 @@ public class ItemService
 
 			for (ItemDefinition itemDefinition : items)
 			{
-				if (!itemDefinition.isTradeable())
+				if (!itemDefinition.isGeTradeable())
 				{
 					continue;
 				}
