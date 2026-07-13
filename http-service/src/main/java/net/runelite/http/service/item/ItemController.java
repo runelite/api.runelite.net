@@ -92,11 +92,11 @@ public class ItemController
 			.toArray(ItemPrice[]::new));
 	}
 
-	private static int computeWikiPrice(int low, int high)
+	private static long computeWikiPrice(long low, long high)
 	{
 		if (low > 0 && high > 0)
 		{
-			return (int) (((long) low + high) / 2);
+			return low + (high - low) / 2;
 		}
 		else
 		{

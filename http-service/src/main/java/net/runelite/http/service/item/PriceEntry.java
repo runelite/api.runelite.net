@@ -32,9 +32,9 @@ class PriceEntry
 {
 	private int item;
 	private String name;
-	private int price;
+	private long price;
 	private Instant time;
 	private Instant fetched_time;
-	private int high;
-	private int low;
+	private long high; // wiki high
+	private long low;  // wiki low
 }

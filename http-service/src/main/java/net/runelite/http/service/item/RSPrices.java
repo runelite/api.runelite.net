@@ -37,5 +37,5 @@ class RSPrices
 	/**
 	 * item id to price
 	 */
-	Map<Integer, Integer> prices;
+	Map<Integer, Long> prices;
 }
