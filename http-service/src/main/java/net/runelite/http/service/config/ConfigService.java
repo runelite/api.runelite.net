@@ -47,9 +47,11 @@ import static com.mongodb.client.model.Updates.inc;
 import static com.mongodb.client.model.Updates.set;
 import static com.mongodb.client.model.Updates.unset;
 import com.mongodb.client.result.UpdateResult;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +91,12 @@ public class ConfigService
 		.projection(fields(include("_profile.rev")));
 
 	private final MongoCollection<Document> mongoCollection;
+
+	@Autowired
+	private MeterRegistry meterRegistry;
+
+	@Value("${runelite.config.metrics}")
+	private boolean enableMetrics;
 
 	@Autowired
 	public ConfigService(
@@ -526,5 +534,45 @@ public class ConfigService
 			eq("_userId", userId),
 			eq("_profile.id", profileId)
 		);
+	}
+
+	private static class Group
+	{
+		int count;
+		int bytes;
+	}
+
+	public void recordMetrics(ConfigPatch patch)
+	{
+		if (!enableMetrics)
+		{
+			return;
+		}
+
+		Map<String, Group> groups = new HashMap<>();
+		for (Map.Entry<String, String> entry : patch.getEdit().entrySet())
+		{
+			String key = entry.getKey();
+			String[] split = key.split("\\.", 2);
+			if (split.length != 2)
+			{
+				continue;
+			}
+
+			String group = split[0];
+			Group g = groups.computeIfAbsent(group, k -> new Group());
+			g.count++;
+			g.bytes += entry.getValue().length();
+		}
+		for (Map.Entry<String, Group> entry : groups.entrySet())
+		{
+			Group g = entry.getValue();
+			meterRegistry.counter("runelite config updates",
+					"group", entry.getKey())
+				.increment(g.count);
+			meterRegistry.counter("runelite config update bytes",
+					"group", entry.getKey())
+				.increment(g.bytes);
+		}
 	}
 }
