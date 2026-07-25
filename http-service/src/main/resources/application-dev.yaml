@@ -27,3 +27,7 @@ mongo:
 # Development oauth callback (without proxy)
 oauth:
   callback: http://localhost:8080/account/callback
+
+runelite:
+  config:
+    metrics: true

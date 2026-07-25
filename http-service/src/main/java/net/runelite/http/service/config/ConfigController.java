@@ -87,6 +87,8 @@ public class ConfigController
 			return null;
 		}
 
+		configService.recordMetrics(patch);
+
 		List<String> failures = configService.patchV2(session.getUser(), patch);
 		if (failures.size() != 0)
 		{
@@ -134,6 +136,8 @@ public class ConfigController
 		{
 			return null;
 		}
+
+		configService.recordMetrics(patch);
 
 		ConfigPatchResult result = configService.patchV3(session.getUser(), profileId, patch);
 		if (result.getFailures().size() != 0)

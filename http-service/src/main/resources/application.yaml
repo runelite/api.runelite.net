@@ -50,3 +50,5 @@ runelite:
     digestUrl: https://secure.runescape.com/m=itemdb_oldschool/digest.csv
   loottracker:
     metrics: false
+  config:
+    metrics: false
