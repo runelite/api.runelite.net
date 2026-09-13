@@ -41,7 +41,7 @@ runelite:
   dirty: @git.dirty@
   wiki:
     poll.ms: 300000 # 5 minutes
-    url: https://prices.runescape.wiki/api/v1/osrs/latest
+    url: https://prices.runescape.wiki/api/v2/osrs/latest
   price:
     cache: 30 # minutes
   worlds:

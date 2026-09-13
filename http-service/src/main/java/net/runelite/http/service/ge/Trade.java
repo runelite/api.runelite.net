@@ -37,8 +37,8 @@ class Trade
 	private int qty;
 	private int dqty;
 	private int total;
-	private int spent;
-	private int offer;
+	private long spent;
+	private long offer;
 	private int slot;
 	private int time;
 	private String machineId;

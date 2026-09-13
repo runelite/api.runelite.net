@@ -50,9 +50,9 @@ public class WikiPriceService
 	private static final String CREATE = "CREATE TABLE IF NOT EXISTS `wiki_prices2` (\n" +
 		"  `gamemode` enum('OSRS', 'FSW'),\n" +
 		"  `item_id` int(11) NOT NULL,\n" +
-		"  `high` int(11) NOT NULL,\n" +
+		"  `high` bigint(11) NOT NULL,\n" +
 		"  `highTime` int(11) NOT NULL,\n" +
-		"  `low` int(11) NOT NULL,\n" +
+		"  `low` bigint(11) NOT NULL,\n" +
 		"  `lowTime` int(11) NOT NULL,\n" +
 		"  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" +
 		"  PRIMARY KEY (`gamemode`, `item_id`)\n" +

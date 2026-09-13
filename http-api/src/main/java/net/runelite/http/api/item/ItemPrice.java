@@ -31,6 +31,6 @@ public class ItemPrice
 {
 	private int id;
 	private String name;
-	private int price;
-	private int wikiPrice;
+	private long price;
+	private long wikiPrice;
 }

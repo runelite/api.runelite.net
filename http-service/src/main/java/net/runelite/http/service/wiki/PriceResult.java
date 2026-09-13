@@ -34,9 +34,9 @@ class PriceResult
 	@Data
 	static class Item
 	{
-		private int high;
+		private long high;
 		private int highTime;
-		private int low;
+		private long low;
 		private int lowTime;
 	}
 

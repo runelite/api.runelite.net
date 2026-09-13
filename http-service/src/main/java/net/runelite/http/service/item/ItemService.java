@@ -67,7 +67,7 @@ public class ItemService
 
 	private static final String CREATE_PRICES = "CREATE TABLE IF NOT EXISTS `prices` (\n"
 		+ "  `item` int(11) NOT NULL,\n"
-		+ "  `price` int(11) NOT NULL,\n"
+		+ "  `price` bigint(11) NOT NULL,\n"
 		+ "  `time` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',\n"
 		+ "  `fetched_time` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',\n"
 		+ "  UNIQUE KEY `item_time` (`item`,`time`),\n"
@@ -102,7 +102,7 @@ public class ItemService
 		}
 	}
 
-	public List<PriceEntry> fetchPrices()
+	List<PriceEntry> fetchPrices()
 	{
 		try (Connection con = sql2o.beginTransaction())
 		{
@@ -136,7 +136,7 @@ public class ItemService
 			{
 				String header = reader.readLine();
 				Instant date = parseHeaderDate(header);
-				Map<Integer, Integer> prices = new HashMap<>();
+				Map<Integer, Long> prices = new HashMap<>();
 
 				for (String line; (line = reader.readLine()) != null; )
 				{
@@ -148,7 +148,7 @@ public class ItemService
 
 					String[] split = line.split(",");
 					int itemId = Integer.parseInt(split[0]);
-					int price = Integer.parseInt(split[1]);
+					long price = Long.parseLong(split[1]);
 					prices.put(itemId, price);
 				}
 
@@ -230,10 +230,10 @@ public class ItemService
 			Query query = con.createQuery("insert into prices (item, price, time, fetched_time) values (:item, :price, :time, :fetched_time) "
 				+ "ON DUPLICATE KEY UPDATE price = VALUES(price), fetched_time = VALUES(fetched_time)");
 
-			for (Map.Entry<Integer, Integer> entry : prices.prices.entrySet())
+			for (Map.Entry<Integer, Long> entry : prices.prices.entrySet())
 			{
 				int itemId = entry.getKey();
-				int price = entry.getValue(); // gp
+				long price = entry.getValue(); // gp
 
 				query
 					.addParameter("item", itemId)
