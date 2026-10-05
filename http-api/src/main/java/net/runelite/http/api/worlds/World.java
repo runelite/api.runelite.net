@@ -36,11 +36,6 @@ public class World
 	private EnumSet<WorldType> types;
 	private String address;
 	private String activity;
-	private int location;
+	private WorldRegion region;
 	private int players;
-
-	public WorldRegion getRegion()
-	{
-		return WorldRegion.valueOf(location);
-	}
 }

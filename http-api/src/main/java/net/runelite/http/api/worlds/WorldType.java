@@ -24,22 +24,30 @@
  */
 package net.runelite.http.api.worlds;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Getter
 public enum WorldType
 {
-	MEMBERS,
-	PVP,
-	BOUNTY,
-	PVP_ARENA,
-	SKILL_TOTAL,
-	QUEST_SPEEDRUNNING,
-	HIGH_RISK,
-	LAST_MAN_STANDING,
-	BETA_WORLD,
-	LEGACY_ONLY,
-	EOC_ONLY,
-	NOSAVE_MODE,
-	TOURNAMENT,
-	FRESH_START_WORLD,
-	DEADMAN,
-	SEASONAL,
+	MEMBERS(1),
+	PVP(1 << 2),
+	BOUNTY(1 << 5),
+	PVP_ARENA(1 << 6),
+	SKILL_TOTAL(1 << 7),
+	QUEST_SPEEDRUNNING(1 << 8),
+	HIGH_RISK(1 << 10),
+	LAST_MAN_STANDING(1 << 14),
+	BETA_WORLD(1 << 16),
+	LEGACY_ONLY(1 << 22),
+	EOC_ONLY(1 << 23),
+	NOSAVE_MODE(1 << 25),
+	TOURNAMENT(1 << 26),
+	FRESH_START_WORLD(1 << 27),
+	DEADMAN(1 << 29),
+	SEASONAL(1 << 30),
+	;
+
+	private final int mask;
 }

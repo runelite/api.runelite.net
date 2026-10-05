@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import net.runelite.http.api.worlds.World;
+import net.runelite.http.api.worlds.WorldRegion;
 import net.runelite.http.api.worlds.WorldResult;
 import net.runelite.http.api.worlds.WorldType;
 import okhttp3.HttpUrl;
@@ -62,32 +63,28 @@ public class WorldsService
 			.url(url)
 			.build();
 
-		byte[] b;
-
+		ByteBuffer buf;
 		try (Response okresponse = okHttpClient.newCall(okrequest).execute())
 		{
-			b = okresponse.body().bytes();
+			buf = ByteBuffer.wrap(okresponse.body().bytes());
 		}
-
-		List<World> worlds = new ArrayList<>();
-		ByteBuffer buf = ByteBuffer.wrap(b);
 
 		int length = buf.getInt();
 		buf.limit(length + 4);
 
 		int num = buf.getShort() & 0xFFFF;
-
+		List<World> worlds = new ArrayList<>(num);
 		for (int i = 0; i < num; ++i)
 		{
-			final World.WorldBuilder worldBuilder = World.builder()
+			final World world = World.builder()
 				.id(buf.getShort() & 0xFFFF)
 				.types(getTypes(buf.getInt()))
 				.address(readString(buf))
 				.activity(readString(buf))
-				.location(buf.get() & 0xFF)
-				.players(buf.getShort());
-
-			worlds.add(worldBuilder.build());
+				.region(WorldRegion.fromLocationId(buf.get() & 0xFF))
+				.players(buf.getShort())
+				.build();
+			worlds.add(world);
 		}
 
 		WorldResult result = new WorldResult();
@@ -99,11 +96,11 @@ public class WorldsService
 	{
 		EnumSet<WorldType> types = EnumSet.noneOf(WorldType.class);
 
-		for (ServiceWorldType type : ServiceWorldType.values())
+		for (WorldType type : WorldType.values())
 		{
 			if ((mask & type.getMask()) != 0)
 			{
-				types.add(type.getApiType());
+				types.add(type);
 			}
 		}
 
@@ -112,12 +109,10 @@ public class WorldsService
 
 	private static String readString(ByteBuffer buf)
 	{
-		byte b;
 		StringBuilder sb = new StringBuilder();
-
-		for (;;)
+		for (; ; )
 		{
-			b = buf.get();
+			byte b = buf.get();
 
 			if (b == 0)
 			{

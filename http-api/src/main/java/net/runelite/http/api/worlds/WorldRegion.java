@@ -34,16 +34,17 @@ import lombok.Getter;
 @Getter
 public enum WorldRegion
 {
-	UNITED_STATES_OF_AMERICA("US", "USA"),
-	UNITED_KINGDOM("GB", "GBR"),
-	AUSTRALIA("AU", "AUS"),
-	GERMANY("DE", "DEU"),
-	BRAZIL("BR", "BRA"),
-	JAPAN("JP", "JPN"),
-	SINGAPORE("SG", "SGP"),
-	SOUTH_AFRICA("ZA", "ZAF"),
+	UNITED_STATES_OF_AMERICA(0, "US", "USA"),
+	UNITED_KINGDOM(1, "GB", "GBR"),
+	AUSTRALIA(3, "AU", "AUS"),
+	GERMANY(7, "DE", "DEU"),
+	BRAZIL(8, "BR", "BRA"),
+	JAPAN(9, "JP", "JPN"),
+	SINGAPORE(10, "SG", "SGP"),
+	SOUTH_AFRICA(12, "ZA", "ZAF"),
 	;
 
+	private final int id;
 	/**
 	 * ISO-3166-1 alpha-2 country code
 	 */
@@ -60,28 +61,15 @@ public enum WorldRegion
 	 * @param locationId the location id of world
 	 * @return WorldRegion the region of the world
 	 */
-	public static WorldRegion valueOf(int locationId)
+	public static WorldRegion fromLocationId(int locationId)
 	{
-		switch (locationId)
+		for (WorldRegion region : WorldRegion.values())
 		{
-			case 0:
-				return UNITED_STATES_OF_AMERICA;
-			case 1:
-				return UNITED_KINGDOM;
-			case 3:
-				return AUSTRALIA;
-			case 7:
-				return GERMANY;
-			case 8:
-				return BRAZIL;
-			case 9:
-				return JAPAN;
-			case 10:
-				return SINGAPORE;
-			case 12:
-				return SOUTH_AFRICA;
-			default:
-				return null;
+			if (region.getId() == locationId)
+			{
+				return region;
+			}
 		}
+		return null;
 	}
 }
