@@ -38,6 +38,7 @@ public enum WorldType
 	SKILL_TOTAL(1 << 7),
 	QUEST_SPEEDRUNNING(1 << 8),
 	HIGH_RISK(1 << 10),
+	HARDCORE_MAIN(1 << 11),
 	LAST_MAN_STANDING(1 << 14),
 	BETA_WORLD(1 << 16),
 	LEGACY_ONLY(1 << 22),
